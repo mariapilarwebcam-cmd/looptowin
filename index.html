@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LoopToWin - Free Online Mini-Games & Instant Browser Games</title>
+  
+  <!-- SEO & U.S. Open Graph Meta Tags -->
+  <meta name="description" content="Play instant, free online mini-games on LoopToWin. Action, arcade, puzzle, and casual browser games with zero downloads required!">
+  <meta name="keywords" content="free online games, mini games, browser games, arcade, casual games, instant play, LoopToWin">
+  <meta name="robots" content="index, follow">
+
+  <meta property="og:site_name" content="LoopToWin">
+  <meta property="og:title" content="LoopToWin - Play Free Instant Mini-Games">
+  <meta property="og:description" content="Jump right into quick, addictive browser games. No install needed!">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://looptowin.com/">
+
+  <style>
+    :root {
+      --bg-dark: #0b0c10;
+      --card-bg: #1a1c23;
+      --accent-cyan: #00f2fe;
+      --accent-pink: #ff007f;
+      --text-bright: #ffffff;
+      --text-muted: #a0a5b5;
+      --border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-bright);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Navbar Header */
+    header {
+      background: rgba(11, 12, 16, 0.95);
+      backdrop-filter: blur(12px);
+      padding: 16px 6%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-logo {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      color: var(--text-bright);
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .brand-logo span {
+      color: var(--accent-cyan);
+      text-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+    }
+
+    .tagline-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* Responsive Ad Banner Slots (Top & Bottom) */
+    .ad-banner-container {
+      width: 100%;
+      max-width: 970px;
+      min-height: 90px;
+      margin: 20px auto 10px auto;
+      padding: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border-color);
+      border-radius: 8px;
+    }
+
+    .ad-placeholder-text {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Main Catalog Area */
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 24px 40px 24px;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* Toolbar & Sort Controls */
+    .catalog-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .catalog-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .catalog-title::before {
+      content: '';
+      width: 4px;
+      height: 22px;
+      background: var(--accent-pink);
+      border-radius: 2px;
+    }
+
+    .sort-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sort-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .sort-select {
+      background: var(--card-bg);
+      color: var(--text-bright);
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .sort-select:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    /* Games Grid */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 22px;
+    }
+
+    .game-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s cubic-bezier(0.1, 1, 0.1, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+      position: relative;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 254, 0.2);
+      border-color: var(--accent-cyan);
+    }
+
+    .card-thumbnail {
+      width: 100%;
+      height: 160px;
+      background: #111319;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumbnail-fallback {
+      font-size: 4rem;
+      user-select: none;
+    }
+
+    .badge-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--accent-pink);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-content {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .game-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    .game-description {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Footer */
+    footer {
+      background: #060709;
+      padding: 35px 20px;
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+      margin-top: 50px;
+    }
+
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+    }
+
+    .footer-nav a:hover {
+      color: var(--accent-cyan);
+    }
+
+    .copyright-text {
+      font-size: 0.8rem;
+      color: #555866;
+    }
+
+    @media (max-width: 600px) {
+      .ad-banner-container {
+        min-height: 50px;
+      }
+      .tagline-pill {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <a href="/" class="brand-logo">LOOP<span>TOWIN</span></a>
+    <div class="tagline-pill">⚡ INSTANT PLAY • NO DOWNLOADS</div>
+  </header>
+
+  <!-- TOP RESPONSIVE AD BANNER SLOT -->
+  <div class="ad-banner-container" id="ad-slot-top">
+    <!-- Adsterra Top Banner Code Will Go Here -->
+    <span class="ad-placeholder-text">ADVERTISEMENT</span>
+  </div>
+
+  <!-- Main Game Catalog -->
+  <main>
+    <div class="catalog-controls">
+      <h1 class="catalog-title">Game Catalog</h1>
+      
+      <!-- Interactive Sort Selector -->
+      <div class="sort-group">
+        <label for="sortSelect" class="sort-label">Sort By:</label>
+        <select id="sortSelect" class="sort-select" onchange="renderGameCatalog()">
+          <option value="popularity">Popularity (Most Played)</option>
+          <option value="alphabetical">Alphabetical (A-Z)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Games Grid (Populated dynamically via JS) -->
+    <div class="games-grid" id="gamesGrid"></div>
+  </main>
+
+  <!-- BOTTOM RESPONSIVE AD BANNER SLOT -->
+  <div class="ad-banner-container" id="ad-slot-bottom">
+    <!-- Adsterra Bottom Banner Code Will Go Here -->
+    <span class="ad-placeholder-text">ADVERTISEMENT</span>
+  </div>
+
+  <!-- U.S. Compliance & Legal Footer -->
+  <footer>
+    <div class="footer-nav">
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms of Service</a>
+      <a href="/contact.html">Contact Us</a>
+    </div>
+    <p class="copyright-text">&copy; 2026 LoopToWin.com. All rights reserved.</p>
+  </footer>
+
+  <!-- Dynamic Catalog Script & Analytics -->
+  <script>
+    // =========================================================================
+    // 1. CATÁLOGO MANUAL DE JUEGOS
+    // Aquí agregarás cada minijuego que crees.
+    // =========================================================================
+    const gamesCatalog = [
+      {
+        id: "office-escape",
+        title: "Office Escape",
+        description: "Dodge your bosses, collect coffee power-ups, and survive the ultimate workday grind!",
+        path: "/games/office-escape/index.html",
+        icon: "🏃‍♂️💼",
+        tag: "HOT"
+      },
+      {
+        id: "alien-survivor",
+        title: "Alien Survivor",
+        description: "Outlast relentless waves of alien hordes in this fast-paced arcade shooter.",
+        path: "/games/alien-survivor/index.html",
+        icon: "🛸👾",
+        tag: "NEW"
+      },
+      {
+        id: "window-cleaner",
+        title: "Window Cleaner",
+        description: "Clean high-rise skyscraper windows while snagging tasty snacks along the way!",
+        path: "/games/window-cleaner/index.html",
+        icon: "🧼🪟",
+        tag: "FUN"
+      }
+    ];
+
+    // =========================================================================
+    // 2. CÁLCULO AUTOMÁTICO DE POPULARIDAD (Basado en el uso real del usuario)
+    // =========================================================================
+    function getGamePopularityScore(gameId) {
+      const plays = parseInt(localStorage.getItem(`plays_${gameId}`) || "0");
+      const timeInSeconds = parseInt(localStorage.getItem(`time_${gameId}`) || "0");
+
+      // Fórmula: 10 Puntos por cada juego iniciado + 1 Punto por cada 5 segundos jugados
+      return (plays * 10) + Math.floor(timeInSeconds / 5);
+    }
+
+    // =========================================================================
+    // 3. RENDERIZADO Y ORDENAMIENTO EN PANTALLA
+    // =========================================================================
+    function renderGameCatalog() {
+      const grid = document.getElementById("gamesGrid");
+      const sortBy = document.getElementById("sortSelect").value;
+
+      // Calcular puntuación automática para cada juego
+      let processedGames = gamesCatalog.map(game => {
+        return {
+          ...game,
+          popularityScore: getGamePopularityScore(game.id)
+        };
+      });
+
+      // Ordenar según la selección del usuario
+      if (sortBy === "popularity") {
+        processedGames.sort((a, b) => b.popularityScore - a.popularityScore);
+      } else if (sortBy === "alphabetical") {
+        processedGames.sort((a, b) => a.title.localeCompare(b.title));
+      }
+
+      grid.innerHTML = "";
+
+      // Construir las tarjetas visuales
+      processedGames.forEach(game => {
+        const card = document.createElement("a");
+        card.href = game.path;
+        card.className = "game-card";
+
+        let thumbContent = game.image 
+          ? `<img src="${game.image}" alt="${game.title}">`
+          : `<span class="thumbnail-fallback">${game.icon || '🎮'}</span>`;
+
+        card.innerHTML = `
+          <div class="card-thumbnail">
+            ${thumbContent}
+            ${game.tag ? `<span class="badge-tag">${game.tag}</span>` : ''}
+          </div>
+          <div class="card-content">
+            <h2 class="game-name">${game.title}</h2>
+            <p class="game-description">${game.description}</p>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", renderGameCatalog);
+  </script>
+
+</body>
+</html>
