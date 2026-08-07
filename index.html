@@ -79,6 +79,12 @@
       cursor: pointer;
       text-transform: uppercase;
       box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-register-header:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
     }
 
     .ad-banner-container {
@@ -94,6 +100,8 @@
     @media (max-width: 768px) {
       .desktop-ad { display: none; }
       .mobile-ad { display: block; }
+      .brand-logo { font-size: 1.5rem; }
+      .btn-register-header { font-size: 0.7rem; padding: 6px 12px; }
     }
 
     main {
@@ -111,6 +119,7 @@
       padding: 25px;
       margin-bottom: 30px;
       text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     .hero-banner h2 {
@@ -149,12 +158,14 @@
       border: 1px solid var(--card-border);
       text-decoration: none;
       color: inherit;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      display: block;
     }
 
     .game-card:hover {
       transform: translateY(-8px);
       border-color: var(--accent-neon-cyan);
+      box-shadow: 0 10px 20px rgba(0, 240, 255, 0.15);
     }
 
     .card-thumbnail {
@@ -178,10 +189,11 @@
       border-radius: 6px;
       font-weight: 900;
       background: var(--accent-neon-pink);
+      box-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
     }
 
     .card-content { padding: 18px; }
-    .game-name { font-size: 1.2rem; font-weight: 800; }
+    .game-name { font-size: 1.2rem; font-weight: 800; color: #fff; }
     .game-description { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; }
 
     /* Modal Styling */
@@ -204,6 +216,7 @@
       width: 90%;
       max-width: 400px;
       position: relative;
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
     }
 
     .modal-close {
@@ -212,10 +225,13 @@
       color: var(--text-muted);
       font-size: 1.5rem;
       cursor: pointer;
+      transition: color 0.2s;
     }
 
+    .modal-close:hover { color: #fff; }
+
     .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; }
+    .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
     .form-input, .form-select {
       width: 100%;
       padding: 10px;
@@ -223,6 +239,12 @@
       border: 1px solid rgba(255,255,255,0.2);
       color: #fff;
       border-radius: 8px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    
+    .form-input:focus, .form-select:focus {
+      border-color: var(--accent-neon-cyan);
     }
 
     .btn-submit {
@@ -235,6 +257,13 @@
       font-family: 'Orbitron', sans-serif;
       font-weight: 900;
       cursor: pointer;
+      margin-top: 10px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .btn-submit:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.5);
     }
 
     footer {
@@ -243,6 +272,7 @@
       text-align: center;
       margin-top: 50px;
       color: var(--text-muted);
+      border-top: 1px solid rgba(255,255,255,0.05);
     }
   </style>
 </head>
@@ -250,10 +280,10 @@
 
   <header>
     <a href="/" class="brand-logo">LOOP<span>TOWIN</span></a>
-    <button class="btn-register-header" onclick="openRegisterModal()" id="userAuthBtn">REGÍSTRATE / ENTRAR 🏆</button>
+    <button class="btn-register-header" onclick="openRegisterModal()" id="userAuthBtn">SIGN UP / LOG IN 🏆</button>
   </header>
 
-  <!-- Banner Publicidad Superior -->
+  <!-- Top Ad Banner Container -->
   <div class="ad-banner-container">
     <div class="desktop-ad">
       <script type="text/javascript">
@@ -272,44 +302,44 @@
   <main>
     <div class="hero-banner">
       <h2>⚡ NO INSTALL NEEDED • SIGN UP TO RANK TOP GLOBAL</h2>
-      <p>¡Juega al instante! Regístrate para guardar tus récords y aparecer en el ranking global.</p>
+      <p>Play instantly! Register to save your high scores and climb the global leaderboards.</p>
     </div>
 
-    <h1 class="catalog-title">JUEGOS DISPONIBLES</h1>
+    <h1 class="catalog-title">FEATURED GAMES</h1>
     <div class="games-grid" id="gamesGrid"></div>
   </main>
 
-  <!-- Modal de Registro -->
+  <!-- Registration Modal -->
   <div class="modal-overlay" id="registerModal">
     <div class="modal-box">
       <span class="modal-close" onclick="closeRegisterModal()">&times;</span>
-      <h2 style="font-family:'Orbitron'; color:var(--accent-neon-cyan); margin-bottom:15px; text-align:center;">REGISTRO DE JUGADOR</h2>
+      <h2 style="font-family:'Orbitron'; color:var(--accent-neon-cyan); margin-bottom:15px; text-align:center;">PLAYER REGISTRATION</h2>
       <form onsubmit="handleRegistration(event)">
         <div class="form-group">
-          <label>NOMBRE DE JUGADOR</label>
-          <input type="text" id="regUsername" class="form-input" placeholder="Ej: GamerPro" required>
+          <label>GAMERTAG / USERNAME</label>
+          <input type="text" id="regUsername" class="form-input" placeholder="e.g., GamerPro99" required>
         </div>
         <div class="form-group">
-          <label>CORREO ELECTRÓNICO</label>
-          <input type="email" id="regEmail" class="form-input" placeholder="tu@email.com" required>
+          <label>EMAIL ADDRESS</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="you@example.com" required>
         </div>
         <div class="form-group">
-          <label>CONTRASEÑA</label>
+          <label>PASSWORD</label>
           <input type="password" id="regPassword" class="form-input" placeholder="••••••••" required>
         </div>
         <div class="form-group">
-          <label>PAÍS EXACTO</label>
+          <label>COUNTRY</label>
           <select id="regCountry" class="form-select" required>
-            <option value="Estados Unidos">🇺🇸 Estados Unidos</option>
-            <option value="México">🇲🇽 México</option>
-            <option value="España">🇪🇸 España</option>
-            <option value="República Dominicana">🇩🇴 República Dominicana</option>
+            <option value="United States">🇺🇸 United States</option>
+            <option value="Canada">🇨🇦 Canada</option>
+            <option value="United Kingdom">🇬🇧 United Kingdom</option>
+            <option value="Mexico">🇲🇽 Mexico</option>
+            <option value="Spain">🇪🇸 Spain</option>
             <option value="Colombia">🇨🇴 Colombia</option>
-            <option value="Argentina">🇦🇷 Argentina</option>
-            <option value="Otro">🌍 Otro País</option>
+            <option value="Other">🌍 Other Location</option>
           </select>
         </div>
-        <button type="submit" class="btn-submit">CREAR CUENTA Y JUGAR 🚀</button>
+        <button type="submit" class="btn-submit">CREATE ACCOUNT & PLAY 🚀</button>
       </form>
     </div>
   </div>
@@ -319,54 +349,97 @@
   </footer>
 
   <script>
+    // Supabase Configuration
     const SUPABASE_URL = 'https://cgfmcawubrtlkyhduvka.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZm1jYXd1YnJ0bGt5aGR1dmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMDY3NzEsImV4cCI6MjEwMTY4Mjc3MX0.iwZuIPjfV9cAjy9Xw5SNe602-tN3Xg-6vBgrA14nUCs';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // Games Catalog
     const gamesCatalog = [
-      { id: "office-escape", title: "Office Escape", description: "Esquiva jefes y sobrevive a la jornada laboral.", path: "/games/office-escape/index.html", image: "/games/office-escape/cover.png" },
-      { id: "alien-survivor", title: "Alien Survivor", description: "Elimina hordas alienígenas al estilo Survivor.", path: "/games/alien-survivor/index.html", image: "/games/alien-survivor/cover.png" },
-      { id: "window-cleaner", title: "Window Cleaner", description: "Limpia ventanas y junta quesitos en los rascacielos.", path: "/games/window-cleaner/index.html", image: "/games/window-cleaner/cover.png" }
+      { id: "office-escape", title: "Office Escape", description: "Dodge your bosses and survive the daily grind.", path: "/games/office-escape/index.html", image: "/games/office-escape/cover.png" },
+      { id: "alien-survivor", title: "Alien Survivor", description: "Wipe out swarms of alien invaders in survivor-style action.", path: "/games/alien-survivor/index.html", image: "/games/alien-survivor/cover.png" },
+      { id: "window-cleaner", title: "Window Cleaner", description: "Scale skyscrapers, clean windows, and grab cheese treats.", path: "/games/window-cleaner/index.html", image: "/games/window-cleaner/cover.png" }
     ];
 
-    function openRegisterModal() { document.getElementById("registerModal").style.display = "flex"; }
-    function closeRegisterModal() { document.getElementById("registerModal").style.display = "none"; }
+    // Modal Functions
+    function openRegisterModal() { 
+      document.getElementById("registerModal").style.display = "flex"; 
+    }
+    
+    function closeRegisterModal() { 
+      document.getElementById("registerModal").style.display = "none"; 
+    }
 
+    // Close modal when clicking outside the box
+    window.onclick = function(event) {
+      const modal = document.getElementById('registerModal');
+      if (event.target == modal) {
+        closeRegisterModal();
+      }
+    }
+
+    // Registration Handler
     async function handleRegistration(e) {
       e.preventDefault();
+      
+      const btn = document.querySelector(".btn-submit");
+      const originalText = btn.innerText;
+      btn.innerText = "SIGNING UP...";
+      btn.disabled = true;
+
       const username = document.getElementById("regUsername").value.trim();
       const email = document.getElementById("regEmail").value.trim();
       const password = document.getElementById("regPassword").value;
       const country = document.getElementById("regCountry").value;
 
+      // 1. Create User in Supabase Auth
       const { data, error } = await supabaseClient.auth.signUp({
-        email, password, options: { data: { username, country } }
+        email, 
+        password, 
+        options: { data: { username, country } }
       });
 
       if (error) {
-        alert("Error al registrarse: " + error.message);
+        alert("Registration Error: " + error.message);
+        btn.innerText = originalText;
+        btn.disabled = false;
         return;
       }
 
-      await supabaseClient.from('profiles').insert([{ username, email, country }]);
+      // 2. Insert Profile Record
+      await supabaseClient.from('profiles').insert([{ 
+        username: username, 
+        email: email, 
+        country: country 
+      }]);
       
+      // 3. Save locally for session recognition across games
       localStorage.setItem("loop_player_name", username);
-      alert("¡Registro exitoso! Bienvenido " + username);
-      document.getElementById("userAuthBtn").innerText = `JUGADOR: ${username.toUpperCase()}`;
+      
+      alert("Registration successful! Welcome, " + username);
+      
+      // Update UI
+      updateAuthButton(username);
       closeRegisterModal();
+      
+      btn.innerText = originalText;
+      btn.disabled = false;
     }
 
+    // Render Game Cards
     function renderCatalog() {
       const grid = document.getElementById("gamesGrid");
       grid.innerHTML = "";
+      
       gamesCatalog.forEach(game => {
         const card = document.createElement("a");
         card.href = game.path;
         card.className = "game-card";
+        
         card.innerHTML = `
           <div class="card-thumbnail">
             <img src="${game.image}" alt="${game.title}" onerror="this.src='https://via.placeholder.com/400x225/121520/00f0ff?text=${encodeURIComponent(game.title)}'">
-            <span class="badge-tag">JUGAR 🔥</span>
+            <span class="badge-tag">PLAY NOW 🔥</span>
           </div>
           <div class="card-content">
             <h2 class="game-name">${game.title}</h2>
@@ -377,11 +450,21 @@
       });
     }
 
+    // Update Header Button
+    function updateAuthButton(username) {
+      if(username) {
+        document.getElementById("userAuthBtn").innerText = `PLAYER: ${username.toUpperCase()}`;
+      }
+    }
+
+    // Initialize Page
     document.addEventListener("DOMContentLoaded", () => {
       renderCatalog();
-      const savedUser = localStorage.setItem("loop_player_name", localStorage.getItem("loop_player_name") || "");
-      const user = localStorage.getItem("loop_player_name");
-      if(user) document.getElementById("userAuthBtn").innerText = `JUGADOR: ${user.toUpperCase()}`;
+      
+      const savedUser = localStorage.getItem("loop_player_name");
+      if(savedUser) {
+        updateAuthButton(savedUser);
+      }
     });
   </script>
 </body>
