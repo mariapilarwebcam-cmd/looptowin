@@ -469,8 +469,10 @@
 
     // Update Header Button
     function updateAuthButton(username) {
-      if(username) {
+      if (username && username.trim().toLowerCase() !== "player") {
         document.getElementById("userAuthBtn").innerText = `PLAYER: ${username.toUpperCase()}`;
+      } else {
+        document.getElementById("userAuthBtn").innerText = "SIGN UP / LOG IN 🏆";
       }
     }
 
