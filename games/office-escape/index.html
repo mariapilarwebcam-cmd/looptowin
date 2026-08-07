@@ -140,7 +140,8 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
         <div id="msg"></div>
         <div class="overlay" id="ovMenu"><div class="ov-inner">
           <div class="t-logo">OFFICE<br>ESCAPE</div>
-          <button type="button" id="btnStart" class="pxbtn">▶ PLAY NOW</button>
+          <button type="button" id="btnStart" class="pxbtn">▶ PLAY NOW</button><br>
+          <button type="button" id="btnTop" class="pxbtn small ghosty">🏆 VIEW TOP SCORES</button>
         </div></div>
         <div class="overlay hidden" id="ovSelect"><div class="ov-inner">
           <div class="t-kicker">HUMAN RESOURCES</div>
@@ -178,6 +179,7 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
           <div class="ad-tipbox">Pick your reward: <b>5s</b> = +1 life · <b>30s</b> = 3 lives + <b>SHIELD</b>. Each is one-time per run. No ad? Back to Floor 1.</div>
           <div class="end-btns">
             <button type="button" id="btnRestart" class="pxbtn small ghosty">↻ START FROM FLOOR 1</button>
+            <button type="button" id="btnTopOver" class="pxbtn small ghosty">🏆 TOP SCORES</button>
           </div>
         </div></div>
         <div class="overlay hidden" id="ovAd"><div class="ov-inner">
@@ -458,6 +460,8 @@ function doGameOver(){state='over';sfx.over();
  $('adCol2').style.display=adUsedBig?'none':'flex';
  ovOver.classList.remove('hidden');
  if(typeof window.saveLoopToWinScore === 'function'){ try{window.saveLoopToWinScore(score);}catch(e){} }
+ /* Show Top 10 only when the run is over and there is no ad left to watch */
+ if(adUsedSmall && adUsedBig && typeof window.ltwShowTop === 'function'){ setTimeout(function(){ window.ltwShowTop(); }, 500); }
 }
 
 function openSelect(){initAudio();sfx.ui();state='select';ovMenu.classList.add('hidden');ovSelect.classList.remove('hidden');previewsDirty=true;}
@@ -634,6 +638,8 @@ screenEl.addEventListener('pointerup',function(e){if(!pStart)return;var dx=e.cli
  if(Math.abs(dx)>Math.abs(dy))setDir(dx>0?R:L);else setDir(dy>0?D:U);});
 ovMenu.addEventListener('click',function(){openSelect();});
 $('btnStart').addEventListener('click',function(e){e.stopPropagation();openSelect();});
+$('btnTop').addEventListener('click',function(e){e.stopPropagation(); if(window.ltwShowTop) window.ltwShowTop();});
+$('btnTopOver').addEventListener('click',function(e){e.stopPropagation(); if(window.ltwShowTop) window.ltwShowTop();});
 $('btnNext').addEventListener('click',function(e){e.stopPropagation();nextFloor();});
 $('btnRestart').addEventListener('click',function(e){e.stopPropagation();ovOver.classList.add('hidden');startRun();});
 $('ad1').addEventListener('click',function(e){e.stopPropagation();startAd('small');});
@@ -673,6 +679,7 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
 <!-- ========================================================= -->
 <!-- MÓDULO LEADERBOARD SUPABASE (LoopToWin) — SOLO REGISTRADOS  -->
 <!-- GAME_ID = "office-escape" | ALL US ENGLISH                 -->
+<!-- TOP 10 = centered modal, shown only on demand / game-over  -->
 <!-- ========================================================= -->
 <script>
 (function() {
@@ -699,49 +706,43 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
     const style = document.createElement('style');
     style.innerHTML = `
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600&display=swap');
-      #ltw-leaderboard-box {
-        position: fixed; bottom: 15px; right: 15px; width: 260px;
-        background: #121520; border: 1px solid rgba(0,240,255,0.4); border-radius: 12px;
-        padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
-        font-family: 'Outfit', sans-serif; z-index: 99999; color: #fff;
-      }
-      #ltw-leaderboard-box h4 { font-family:'Orbitron',sans-serif; color:#ffea00; font-size:0.85rem; margin:0 0 8px 0; text-align:center; letter-spacing:0.5px; }
-      .ltw-item { display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
-      .ltw-item .ltw-name { color:#00f0ff; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px; }
-      .ltw-item .ltw-pts { color:#ff0055; font-weight:800; }
-      #ltw-register-overlay {
+      #ltw-top-overlay, #ltw-register-overlay {
         position: fixed; inset: 0; z-index: 100000; display: none;
         align-items: center; justify-content: center; background: rgba(5,8,15,0.85);
         font-family: 'Outfit', sans-serif;
       }
-      #ltw-register-box {
+      #ltw-leaderboard-box, #ltw-register-box {
         width: 300px; background:#121520; border:1px solid rgba(0,240,255,0.5); border-radius:14px;
         padding:18px; text-align:center; color:#fff; box-shadow:0 0 30px rgba(0,0,0,0.9);
       }
-      #ltw-register-box h4 { font-family:'Orbitron',sans-serif; color:#ffea00; margin:0 0 8px 0; font-size:0.95rem; }
+      #ltw-leaderboard-box h4, #ltw-register-box h4 { font-family:'Orbitron',sans-serif; color:#ffea00; margin:0 0 8px 0; font-size:0.95rem; }
       #ltw-register-box p { font-size:0.8rem; color:#cfd6e4; margin:0 0 12px 0; }
+      .ltw-item { display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+      .ltw-item .ltw-name { color:#00f0ff; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+      .ltw-item .ltw-pts { color:#ff0055; font-weight:800; }
+      .ltw-close { margin-top:12px; font-family:'Orbitron',sans-serif; font-size:0.7rem; padding:8px 14px; border-radius:8px; border:none; background:#2a2f3d; color:#cfd6e4; cursor:pointer; }
       #ltw-reg-name {
         width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,240,255,0.4);
         background:#0b0e16; color:#fff; font-size:0.9rem; outline:none; margin-bottom:12px;
       }
       .ltw-reg-btns { display:flex; gap:8px; justify-content:center; }
-      .ltw-reg-btns button {
-        font-family:'Orbitron',sans-serif; font-size:0.7rem; padding:8px 10px; border-radius:8px; cursor:pointer; border:none;
-      }
+      .ltw-reg-btns button { font-family:'Orbitron',sans-serif; font-size:0.7rem; padding:8px 10px; border-radius:8px; cursor:pointer; border:none; }
       #ltw-reg-save { background:#00f0ff; color:#00131a; font-weight:700; }
       #ltw-reg-skip { background:#2a2f3d; color:#cfd6e4; }
     `;
     document.head.appendChild(style);
 
-    const box = document.createElement('div');
-    box.id = 'ltw-leaderboard-box';
-    box.innerHTML = `
-      <h4>🏆 GLOBAL TOP 10</h4>
-      <div id="ltw-list-container">
-        <div class="ltw-item"><span class="ltw-name">Loading...</span></div>
-      </div>
-    `;
-    document.body.appendChild(box);
+    /* Centered Top-10 modal (hidden by default; never covers the playfield) */
+    const topOverlay = document.createElement('div');
+    topOverlay.id = 'ltw-top-overlay';
+    topOverlay.innerHTML = `
+      <div id="ltw-leaderboard-box">
+        <h4>🏆 GLOBAL TOP 10</h4>
+        <div id="ltw-list-container"><div class="ltw-item"><span class="ltw-name">Loading...</span></div></div>
+        <button class="ltw-close" id="ltw-close-btn">CLOSE</button>
+      </div>`;
+    document.body.appendChild(topOverlay);
+    topOverlay.querySelector('#ltw-close-btn').onclick = function(){ topOverlay.style.display='none'; };
 
     const regOverlay = document.createElement('div');
     regOverlay.id = 'ltw-register-overlay';
@@ -754,85 +755,55 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
           <button id="ltw-reg-save">SAVE & SUBMIT</button>
           <button id="ltw-reg-skip">PLAY AS GUEST</button>
         </div>
-      </div>
-    `;
+      </div>`;
     document.body.appendChild(regOverlay);
 
-    function isRegistered(){
-      try { return localStorage.getItem(REG_KEY) === '1' && (localStorage.getItem(NAME_KEY)||'').trim().length > 0; }
-      catch(e){ return false; }
-    }
+    function isRegistered(){ try { return localStorage.getItem(REG_KEY)==='1' && (localStorage.getItem(NAME_KEY)||'').trim().length>0; } catch(e){ return false; } }
     function getName(){ try { return (localStorage.getItem(NAME_KEY)||'').trim(); } catch(e){ return ''; } }
 
     async function loadTop10() {
       const { data } = await supabaseClient
-        .from('leaderboard')
-        .select('player_name, score')
-        .eq('game_id', GAME_ID)
-        .order('score', { ascending: false })
-        .limit(100);
-
-      const clean = (data||[]).filter(e => e.player_name && !GUEST_NAMES.includes(String(e.player_name).toLowerCase()));
-      const top = clean.slice(0,10);
-
-      const container = document.getElementById("ltw-list-container");
-      container.innerHTML = "";
-      if (top.length === 0) {
-        container.innerHTML = `<div class="ltw-item"><span class="ltw-name">Be the first to score!</span></div>`;
-        return;
-      }
-      top.forEach((entry, idx) => {
-        const row = document.createElement('div');
-        row.className = 'ltw-item';
-        row.innerHTML = `
-          <span class="ltw-name">#${idx + 1} ${entry.player_name}</span>
-          <span class="ltw-pts">${entry.score} pts</span>
-        `;
+        .from('leaderboard').select('player_name, score')
+        .eq('game_id', GAME_ID).order('score',{ascending:false}).limit(100);
+      const clean=(data||[]).filter(e=>e.player_name && !GUEST_NAMES.includes(String(e.player_name).toLowerCase()));
+      const top=clean.slice(0,10);
+      const container=document.getElementById('ltw-list-container');
+      container.innerHTML='';
+      if(top.length===0){ container.innerHTML=`<div class="ltw-item"><span class="ltw-name">Be the first to score!</span></div>`; return; }
+      top.forEach((entry,idx)=>{
+        const row=document.createElement('div'); row.className='ltw-item';
+        row.innerHTML=`<span class="ltw-name">#${idx+1} ${entry.player_name}</span><span class="ltw-pts">${entry.score} pts</span>`;
         container.appendChild(row);
       });
     }
 
-    async function insertScore(name, score) {
-      try {
-        await supabaseClient.from('leaderboard').insert([
-          { game_id: GAME_ID, player_name: name, score: score }
-        ]);
-        loadTop10();
-      } catch(e){ console.warn('[LTW] Score not saved:', e); }
-    }
+    window.ltwShowTop = function(){ loadTop10(); topOverlay.style.display='flex'; };
+    window.ltwHideTop = function(){ topOverlay.style.display='none'; };
 
-    function showRegisterModal(score) {
-      document.getElementById('ltw-reg-score').textContent = score;
-      regOverlay.style.display = 'flex';
-      const nameInput = document.getElementById('ltw-reg-name');
-      nameInput.value = getName();
-      nameInput.style.borderColor = 'rgba(0,240,255,0.4)';
-      const saveBtn = document.getElementById('ltw-reg-save');
-      const skipBtn = document.getElementById('ltw-reg-skip');
-      saveBtn.onclick = async function(){
-        const name = nameInput.value.trim().slice(0,20);
+    async function insertScore(name,score){
+      try{ await supabaseClient.from('leaderboard').insert([{game_id:GAME_ID,player_name:name,score:score}]); loadTop10(); }
+      catch(e){ console.warn('[LTW] Score not saved:',e); }
+    }
+    function showRegisterModal(score){
+      document.getElementById('ltw-reg-score').textContent=score;
+      regOverlay.style.display='flex';
+      const nameInput=document.getElementById('ltw-reg-name');
+      nameInput.value=getName(); nameInput.style.borderColor='rgba(0,240,255,0.4)';
+      document.getElementById('ltw-reg-save').onclick=async function(){
+        const name=nameInput.value.trim().slice(0,20);
         if(!name){ nameInput.focus(); nameInput.style.borderColor='#ff0055'; return; }
-        try { localStorage.setItem(NAME_KEY, name); localStorage.setItem(REG_KEY, '1'); } catch(e){}
-        regOverlay.style.display = 'none';
-        await insertScore(name, score);
+        try{ localStorage.setItem(NAME_KEY,name); localStorage.setItem(REG_KEY,'1'); }catch(e){}
+        regOverlay.style.display='none';
+        await insertScore(name,score);
       };
-      skipBtn.onclick = function(){ regOverlay.style.display = 'none'; };
+      document.getElementById('ltw-reg-skip').onclick=function(){ regOverlay.style.display='none'; };
     }
 
-    window.saveLoopToWinScore = async function(finalScore) {
-      if (!finalScore || finalScore <= 0) return;
-      if (isRegistered()) { await insertScore(getName(), finalScore); }
+    window.saveLoopToWinScore = async function(finalScore){
+      if(!finalScore || finalScore<=0) return;
+      if(isRegistered()){ await insertScore(getName(),finalScore); }
       else { showRegisterModal(finalScore); }
     };
-
-    if (typeof window.gameOver === 'function') {
-      const originalGameOver = window.gameOver;
-      window.gameOver = function() {
-        const score = window.score || window.finalScore || window.points || 0;
-        window.saveLoopToWinScore(score);
-        originalGameOver.apply(this, arguments);
-      };
-    }
 
     loadTop10();
   }
