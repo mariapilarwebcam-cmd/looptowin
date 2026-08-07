@@ -81,26 +81,33 @@
       font-weight: 600;
     }
 
-    /* Responsive Ad Banner Containers */
+    /* Contenedores de Publicidad Responsiva */
     .ad-banner-container {
       width: 100%;
       max-width: 970px;
-      min-height: 90px;
       margin: 20px auto 10px auto;
       padding: 5px;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px dashed var(--border-color);
-      border-radius: 8px;
     }
 
-    .ad-placeholder-text {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    /* Reglas de visualización según el dispositivo */
+    .mobile-ad {
+      display: none; /* Oculto en PC por defecto */
+    }
+
+    .desktop-ad {
+      display: block; /* Visible en PC por defecto */
+    }
+
+    @media (max-width: 768px) {
+      .desktop-ad {
+        display: none; /* Oculta el banner grande en celulares */
+      }
+      .mobile-ad {
+        display: block; /* Muestra el banner adaptable de 320x50 en celulares */
+      }
     }
 
     /* Main Content */
@@ -285,9 +292,6 @@
     }
 
     @media (max-width: 600px) {
-      .ad-banner-container {
-        min-height: 50px;
-      }
       .tagline-pill {
         display: none;
       }
@@ -302,9 +306,37 @@
     <div class="tagline-pill">⚡ INSTANT PLAY • NO DOWNLOADS</div>
   </header>
 
-  <!-- TOP AD BANNER SLOT -->
+  <!-- TOP AD BANNER SLOT (RESPONSIVO) -->
   <div class="ad-banner-container" id="ad-slot-top">
-    <span class="ad-placeholder-text">ADVERTISEMENT</span>
+    
+    <!-- Banner de Escritorio (728x90) -->
+    <div class="desktop-ad">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : '7c3da643b5e08990d9109aaf99c9f0fe',
+          'format' : 'iframe',
+          'height' : 90,
+          'width' : 728,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="https://onionclose.com/7c3da643b5e08990d9109aaf99c9f0fe/invoke.js"></script>
+    </div>
+
+    <!-- Banner Móvil (320x50) -->
+    <div class="mobile-ad">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : '2e33ef8f844b01eff6ffa2c69eafecac',
+          'format' : 'iframe',
+          'height' : 50,
+          'width' : 320,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="https://onionclose.com/2e33ef8f844b01eff6ffa2c69eafecac/invoke.js"></script>
+    </div>
+
   </div>
 
   <!-- Main Game Catalog -->
@@ -325,9 +357,37 @@
     <div class="games-grid" id="gamesGrid"></div>
   </main>
 
-  <!-- BOTTOM AD BANNER SLOT -->
+  <!-- BOTTOM AD BANNER SLOT (RESPONSIVO) -->
   <div class="ad-banner-container" id="ad-slot-bottom">
-    <span class="ad-placeholder-text">ADVERTISEMENT</span>
+    
+    <!-- Banner de Escritorio (728x90) -->
+    <div class="desktop-ad">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : '7c3da643b5e08990d9109aaf99c9f0fe',
+          'format' : 'iframe',
+          'height' : 90,
+          'width' : 728,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="https://onionclose.com/7c3da643b5e08990d9109aaf99c9f0fe/invoke.js"></script>
+    </div>
+
+    <!-- Banner Móvil (320x50) -->
+    <div class="mobile-ad">
+      <script type="text/javascript">
+        atOptions = {
+          'key' : '2e33ef8f844b01eff6ffa2c69eafecac',
+          'format' : 'iframe',
+          'height' : 50,
+          'width' : 320,
+          'params' : {}
+        };
+      </script>
+      <script type="text/javascript" src="https://onionclose.com/2e33ef8f844b01eff6ffa2c69eafecac/invoke.js"></script>
+    </div>
+
   </div>
 
   <!-- U.S. Compliance & Legal Footer -->
@@ -352,7 +412,7 @@
         title: "Office Escape",
         description: "Dodge your bosses, collect coffee power-ups, and survive the ultimate workday grind!",
         path: "/games/office-escape/index.html",
-        image: "/games/office-escape/cover.png", // <--- RUTA DE TU IMAGEN
+        image: "/games/office-escape/cover.png",
         tag: "HOT"
       },
       {
@@ -360,7 +420,7 @@
         title: "Alien Survivor",
         description: "Outlast relentless waves of alien hordes in this fast-paced arcade shooter.",
         path: "/games/alien-survivor/index.html",
-        image: "/games/alien-survivor/cover.png", // <--- RUTA DE TU IMAGEN
+        image: "/games/alien-survivor/cover.png",
         tag: "NEW"
       },
       {
@@ -368,7 +428,7 @@
         title: "Window Cleaner",
         description: "Clean high-rise skyscraper windows while snagging tasty snacks along the way!",
         path: "/games/window-cleaner/index.html",
-        image: "/games/window-cleaner/cover.png", // <--- RUTA DE TU IMAGEN
+        image: "/games/window-cleaner/cover.png",
         tag: "FUN"
       }
     ];
@@ -409,7 +469,6 @@
         card.href = game.path;
         card.className = "game-card";
 
-        // Si colocas una imagen válida la muestra; si no, genera una portada temporal con el título
         const imageUrl = game.image || `https://via.placeholder.com/400x225/1f2833/00f2fe?text=${encodeURIComponent(game.title)}`;
 
         card.innerHTML = `
