@@ -3,135 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoopToWin - Free Online Mini-Games & Instant Browser Games</title>
+  <title>LoopToWin - Play Free Instant Arcade Games</title>
   
-  <!-- SEO & U.S. Open Graph Meta Tags -->
-  <meta name="description" content="Play instant, free online mini-games on LoopToWin. Action, arcade, puzzle, and casual browser games with zero downloads required!">
-  <meta name="keywords" content="free online games, mini games, browser games, arcade, casual games, instant play, LoopToWin">
-  <meta name="robots" content="index, follow">
+  <meta name="description" content="Play free online games instantly! Sign up to rank on the global leaderboard. No install needed.">
+  <meta name="keywords" content="free online games, instant play, browser games, arcade, LoopToWin">
 
-  <meta property="og:site_name" content="LoopToWin">
-  <meta property="og:title" content="LoopToWin - Play Free Instant Mini-Games">
-  <meta property="og:description" content="Jump right into quick, addictive browser games. No install needed!">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://looptowin.com/">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root {
-      --bg-dark: #0b0c10;
-      --card-bg: #1a1c23;
-      --accent-cyan: #00f2fe;
-      --accent-pink: #ff007f;
+      --bg-dark: #07090e;
+      --card-bg: #121520;
+      --accent-neon-cyan: #00f0ff;
+      --accent-neon-pink: #ff0055;
+      --accent-neon-yellow: #ffea00;
+      --accent-purple: #7000ff;
       --text-bright: #ffffff;
-      --text-muted: #a0a5b5;
-      --border-color: rgba(255, 255, 255, 0.08);
+      --text-muted: #8d95ab;
+      --card-border: rgba(0, 240, 255, 0.2);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 20%, rgba(112, 0, 255, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 85% 80%, rgba(0, 240, 255, 0.12) 0%, transparent 40%);
       color: var(--text-bright);
+      font-family: 'Outfit', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
     }
 
-    /* Header */
     header {
-      background: rgba(11, 12, 16, 0.95);
-      backdrop-filter: blur(12px);
-      padding: 16px 6%;
+      background: rgba(7, 9, 14, 0.85);
+      backdrop-filter: blur(16px);
+      padding: 14px 5%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       position: sticky;
       top: 0;
       z-index: 100;
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 2px solid rgba(0, 240, 255, 0.2);
     }
 
     .brand-logo {
-      font-size: 1.8rem;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2rem;
       font-weight: 900;
-      letter-spacing: -0.5px;
       color: var(--text-bright);
       text-decoration: none;
-      text-transform: uppercase;
+      font-style: italic;
     }
 
-    .brand-logo span {
-      color: var(--accent-cyan);
-      text-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
-    }
+    .brand-logo span { color: var(--accent-neon-cyan); }
 
-    .tagline-pill {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--border-color);
-      padding: 6px 14px;
-      border-radius: 20px;
+    .btn-register-header {
+      background: linear-gradient(135deg, var(--accent-neon-cyan), var(--accent-purple));
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
       font-size: 0.8rem;
-      color: var(--accent-cyan);
-      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 20px;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
     }
 
-    /* Contenedores de Publicidad Responsiva */
     .ad-banner-container {
       width: 100%;
-      max-width: 970px;
-      margin: 20px auto 10px auto;
-      padding: 5px;
+      max-width: 1000px;
+      margin: 15px auto;
       display: flex;
       justify-content: center;
-      align-items: center;
     }
 
-    /* Reglas de visualización según el dispositivo */
-    .mobile-ad {
-      display: none; /* Oculto en PC por defecto */
-    }
-
-    .desktop-ad {
-      display: block; /* Visible en PC por defecto */
-    }
-
+    .mobile-ad { display: none; }
+    .desktop-ad { display: block; }
     @media (max-width: 768px) {
-      .desktop-ad {
-        display: none; /* Oculta el banner grande en celulares */
-      }
-      .mobile-ad {
-        display: block; /* Muestra el banner adaptable de 320x50 en celulares */
-      }
+      .desktop-ad { display: none; }
+      .mobile-ad { display: block; }
     }
 
-    /* Main Content */
     main {
-      max-width: 1280px;
+      max-width: 1300px;
       margin: 0 auto;
-      padding: 20px 24px 40px 24px;
+      padding: 20px;
       flex: 1;
       width: 100%;
     }
 
-    /* Controls Header */
-    .catalog-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-      flex-wrap: wrap;
-      gap: 15px;
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(112, 0, 255, 0.25) 0%, rgba(0, 240, 255, 0.1) 100%);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      border-radius: 18px;
+      padding: 25px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .hero-banner h2 {
+      font-family: 'Orbitron', sans-serif;
+      color: var(--accent-neon-yellow);
+      font-size: 1.4rem;
+      margin-bottom: 8px;
     }
 
     .catalog-title {
-      font-size: 1.5rem;
-      font-weight: 800;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -139,355 +131,258 @@
 
     .catalog-title::before {
       content: '';
-      width: 4px;
-      height: 22px;
-      background: var(--accent-pink);
-      border-radius: 2px;
+      width: 6px;
+      height: 24px;
+      background: var(--accent-neon-cyan);
     }
 
-    .sort-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sort-label {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .sort-select {
-      background: var(--card-bg);
-      color: var(--text-bright);
-      border: 1px solid var(--border-color);
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      outline: none;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-
-    .sort-select:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    /* Grid Layout */
     .games-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 22px;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 25px;
     }
 
     .game-card {
       background: var(--card-bg);
-      border-radius: 14px;
+      border-radius: 16px;
       overflow: hidden;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--card-border);
       text-decoration: none;
       color: inherit;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.25s cubic-bezier(0.1, 1, 0.1, 1), box-shadow 0.25s ease, border-color 0.25s ease;
-      position: relative;
+      transition: transform 0.3s ease;
     }
 
     .game-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 254, 0.2);
-      border-color: var(--accent-cyan);
+      transform: translateY(-8px);
+      border-color: var(--accent-neon-cyan);
     }
 
     .card-thumbnail {
-      width: 100%;
-      height: 160px;
-      background: #111319;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      height: 170px;
+      background: #0b0d14;
       position: relative;
-      overflow: hidden;
     }
 
     .card-thumbnail img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-
-    .game-card:hover .card-thumbnail img {
-      transform: scale(1.05);
     }
 
     .badge-tag {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: var(--accent-pink);
-      color: #fff;
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 4px 8px;
+      top: 12px; right: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      padding: 5px 10px;
       border-radius: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      z-index: 2;
+      font-weight: 900;
+      background: var(--accent-neon-pink);
     }
 
-    .card-content {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+    .card-content { padding: 18px; }
+    .game-name { font-size: 1.2rem; font-weight: 800; }
+    .game-description { font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; }
 
-    .game-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--text-bright);
-    }
-
-    .game-description {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      line-height: 1.35;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Footer */
-    footer {
-      background: #060709;
-      padding: 35px 20px;
-      text-align: center;
-      border-top: 1px solid var(--border-color);
-      margin-top: 50px;
-    }
-
-    .footer-nav {
-      display: flex;
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
       justify-content: center;
-      gap: 24px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
+      align-items: center;
+      z-index: 1000;
     }
 
-    .footer-nav a {
+    .modal-box {
+      background: var(--card-bg);
+      border: 2px solid var(--accent-neon-cyan);
+      border-radius: 18px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 15px; right: 20px;
       color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.88rem;
-      transition: color 0.2s;
+      font-size: 1.5rem;
+      cursor: pointer;
     }
 
-    .footer-nav a:hover {
-      color: var(--accent-cyan);
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 5px; }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 10px;
+      background: #090c14;
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 8px;
     }
 
-    .copyright-text {
-      font-size: 0.8rem;
-      color: #555866;
+    .btn-submit {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--accent-neon-pink), var(--accent-purple));
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      cursor: pointer;
     }
 
-    @media (max-width: 600px) {
-      .tagline-pill {
-        display: none;
-      }
+    footer {
+      background: #040508;
+      padding: 30px;
+      text-align: center;
+      margin-top: 50px;
+      color: var(--text-muted);
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
   <header>
     <a href="/" class="brand-logo">LOOP<span>TOWIN</span></a>
-    <div class="tagline-pill">⚡ INSTANT PLAY • NO DOWNLOADS</div>
+    <button class="btn-register-header" onclick="openRegisterModal()" id="userAuthBtn">REGÍSTRATE / ENTRAR 🏆</button>
   </header>
 
-  <!-- TOP AD BANNER SLOT (RESPONSIVO) -->
-  <div class="ad-banner-container" id="ad-slot-top">
-    
-    <!-- Banner de Escritorio (728x90) -->
+  <!-- Banner Publicidad Superior -->
+  <div class="ad-banner-container">
     <div class="desktop-ad">
       <script type="text/javascript">
-        atOptions = {
-          'key' : '7c3da643b5e08990d9109aaf99c9f0fe',
-          'format' : 'iframe',
-          'height' : 90,
-          'width' : 728,
-          'params' : {}
-        };
+        atOptions = { 'key' : '7c3da643b5e08990d9109aaf99c9f0fe', 'format' : 'iframe', 'height' : 90, 'width' : 728, 'params' : {} };
       </script>
       <script type="text/javascript" src="https://onionclose.com/7c3da643b5e08990d9109aaf99c9f0fe/invoke.js"></script>
     </div>
-
-    <!-- Banner Móvil (320x50) -->
     <div class="mobile-ad">
       <script type="text/javascript">
-        atOptions = {
-          'key' : '2e33ef8f844b01eff6ffa2c69eafecac',
-          'format' : 'iframe',
-          'height' : 50,
-          'width' : 320,
-          'params' : {}
-        };
+        atOptions = { 'key' : '2e33ef8f844b01eff6ffa2c69eafecac', 'format' : 'iframe', 'height' : 50, 'width' : 320, 'params' : {} };
       </script>
       <script type="text/javascript" src="https://onionclose.com/2e33ef8f844b01eff6ffa2c69eafecac/invoke.js"></script>
     </div>
-
   </div>
 
-  <!-- Main Game Catalog -->
   <main>
-    <div class="catalog-controls">
-      <h1 class="catalog-title">Game Catalog</h1>
-      
-      <div class="sort-group">
-        <label for="sortSelect" class="sort-label">Sort By:</label>
-        <select id="sortSelect" class="sort-select" onchange="renderGameCatalog()">
-          <option value="popularity">Popularity (Most Played)</option>
-          <option value="alphabetical">Alphabetical (A-Z)</option>
-        </select>
-      </div>
+    <div class="hero-banner">
+      <h2>⚡ NO INSTALL NEEDED • SIGN UP TO RANK TOP GLOBAL</h2>
+      <p>¡Juega al instante! Regístrate para guardar tus récords y aparecer en el ranking global.</p>
     </div>
 
-    <!-- Games Grid -->
+    <h1 class="catalog-title">JUEGOS DISPONIBLES</h1>
     <div class="games-grid" id="gamesGrid"></div>
   </main>
 
-  <!-- BOTTOM AD BANNER SLOT (RESPONSIVO) -->
-  <div class="ad-banner-container" id="ad-slot-bottom">
-    
-    <!-- Banner de Escritorio (728x90) -->
-    <div class="desktop-ad">
-      <script type="text/javascript">
-        atOptions = {
-          'key' : '7c3da643b5e08990d9109aaf99c9f0fe',
-          'format' : 'iframe',
-          'height' : 90,
-          'width' : 728,
-          'params' : {}
-        };
-      </script>
-      <script type="text/javascript" src="https://onionclose.com/7c3da643b5e08990d9109aaf99c9f0fe/invoke.js"></script>
+  <!-- Modal de Registro -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-box">
+      <span class="modal-close" onclick="closeRegisterModal()">&times;</span>
+      <h2 style="font-family:'Orbitron'; color:var(--accent-neon-cyan); margin-bottom:15px; text-align:center;">REGISTRO DE JUGADOR</h2>
+      <form onsubmit="handleRegistration(event)">
+        <div class="form-group">
+          <label>NOMBRE DE JUGADOR</label>
+          <input type="text" id="regUsername" class="form-input" placeholder="Ej: GamerPro" required>
+        </div>
+        <div class="form-group">
+          <label>CORREO ELECTRÓNICO</label>
+          <input type="email" id="regEmail" class="form-input" placeholder="tu@email.com" required>
+        </div>
+        <div class="form-group">
+          <label>CONTRASEÑA</label>
+          <input type="password" id="regPassword" class="form-input" placeholder="••••••••" required>
+        </div>
+        <div class="form-group">
+          <label>PAÍS EXACTO</label>
+          <select id="regCountry" class="form-select" required>
+            <option value="Estados Unidos">🇺🇸 Estados Unidos</option>
+            <option value="México">🇲🇽 México</option>
+            <option value="España">🇪🇸 España</option>
+            <option value="República Dominicana">🇩🇴 República Dominicana</option>
+            <option value="Colombia">🇨🇴 Colombia</option>
+            <option value="Argentina">🇦🇷 Argentina</option>
+            <option value="Otro">🌍 Otro País</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-submit">CREAR CUENTA Y JUGAR 🚀</button>
+      </form>
     </div>
-
-    <!-- Banner Móvil (320x50) -->
-    <div class="mobile-ad">
-      <script type="text/javascript">
-        atOptions = {
-          'key' : '2e33ef8f844b01eff6ffa2c69eafecac',
-          'format' : 'iframe',
-          'height' : 50,
-          'width' : 320,
-          'params' : {}
-        };
-      </script>
-      <script type="text/javascript" src="https://onionclose.com/2e33ef8f844b01eff6ffa2c69eafecac/invoke.js"></script>
-    </div>
-
   </div>
 
-  <!-- U.S. Compliance & Legal Footer -->
   <footer>
-    <div class="footer-nav">
-      <a href="/privacy.html">Privacy Policy</a>
-      <a href="/terms.html">Terms of Service</a>
-      <a href="/contact.html">Contact Us</a>
-    </div>
-    <p class="copyright-text">&copy; 2026 LoopToWin.com. All rights reserved.</p>
+    <p>&copy; 2026 LoopToWin. All rights reserved.</p>
   </footer>
 
-  <!-- Script del Catálogo Dínámico e Imágenes de Portada -->
   <script>
-    // =========================================================================
-    // LISTA DE JUEGOS
-    // Al agregar un juego nuevo, pon aquí la ruta de su imagen ("image").
-    // =========================================================================
+    const SUPABASE_URL = 'https://cgfmcawubrtlkyhduvka.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZm1jYXd1YnJ0bGt5aGR1dmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMDY3NzEsImV4cCI6MjEwMTY4Mjc3MX0.iwZuIPjfV9cAjy9Xw5SNe602-tN3Xg-6vBgrA14nUCs';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     const gamesCatalog = [
-      {
-        id: "office-escape",
-        title: "Office Escape",
-        description: "Dodge your bosses, collect coffee power-ups, and survive the ultimate workday grind!",
-        path: "/games/office-escape/index.html",
-        image: "/games/office-escape/cover.png",
-        tag: "HOT"
-      },
-      {
-        id: "alien-survivor",
-        title: "Alien Survivor",
-        description: "Outlast relentless waves of alien hordes in this fast-paced arcade shooter.",
-        path: "/games/alien-survivor/index.html",
-        image: "/games/alien-survivor/cover.png",
-        tag: "NEW"
-      },
-      {
-        id: "window-cleaner",
-        title: "Window Cleaner",
-        description: "Clean high-rise skyscraper windows while snagging tasty snacks along the way!",
-        path: "/games/window-cleaner/index.html",
-        image: "/games/window-cleaner/cover.png",
-        tag: "FUN"
-      }
+      { id: "office-escape", title: "Office Escape", description: "Esquiva jefes y sobrevive a la jornada laboral.", path: "/games/office-escape/index.html", image: "/games/office-escape/cover.png" },
+      { id: "alien-survivor", title: "Alien Survivor", description: "Elimina hordas alienígenas al estilo Survivor.", path: "/games/alien-survivor/index.html", image: "/games/alien-survivor/cover.png" },
+      { id: "window-cleaner", title: "Window Cleaner", description: "Limpia ventanas y junta quesitos en los rascacielos.", path: "/games/window-cleaner/index.html", image: "/games/window-cleaner/cover.png" }
     ];
 
-    // =========================================================================
-    // CÁLCULO AUTOMÁTICO DE POPULARIDAD
-    // =========================================================================
-    function getGamePopularityScore(gameId) {
-      const plays = parseInt(localStorage.getItem(`plays_${gameId}`) || "0");
-      const timeInSeconds = parseInt(localStorage.getItem(`time_${gameId}`) || "0");
-      return (plays * 10) + Math.floor(timeInSeconds / 5);
-    }
+    function openRegisterModal() { document.getElementById("registerModal").style.display = "flex"; }
+    function closeRegisterModal() { document.getElementById("registerModal").style.display = "none"; }
 
-    // =========================================================================
-    // DIBUJAR TARJETAS EN PANTALLA
-    // =========================================================================
-    function renderGameCatalog() {
-      const grid = document.getElementById("gamesGrid");
-      const sortBy = document.getElementById("sortSelect").value;
+    async function handleRegistration(e) {
+      e.preventDefault();
+      const username = document.getElementById("regUsername").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value;
+      const country = document.getElementById("regCountry").value;
 
-      let processedGames = gamesCatalog.map(game => {
-        return {
-          ...game,
-          popularityScore: getGamePopularityScore(game.id)
-        };
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password, options: { data: { username, country } }
       });
 
-      if (sortBy === "popularity") {
-        processedGames.sort((a, b) => b.popularityScore - a.popularityScore);
-      } else if (sortBy === "alphabetical") {
-        processedGames.sort((a, b) => a.title.localeCompare(b.title));
+      if (error) {
+        alert("Error al registrarse: " + error.message);
+        return;
       }
 
-      grid.innerHTML = "";
+      await supabaseClient.from('profiles').insert([{ username, email, country }]);
+      
+      localStorage.setItem("loop_player_name", username);
+      alert("¡Registro exitoso! Bienvenido " + username);
+      document.getElementById("userAuthBtn").innerText = `JUGADOR: ${username.toUpperCase()}`;
+      closeRegisterModal();
+    }
 
-      processedGames.forEach(game => {
+    function renderCatalog() {
+      const grid = document.getElementById("gamesGrid");
+      grid.innerHTML = "";
+      gamesCatalog.forEach(game => {
         const card = document.createElement("a");
         card.href = game.path;
         card.className = "game-card";
-
-        const imageUrl = game.image || `https://via.placeholder.com/400x225/1f2833/00f2fe?text=${encodeURIComponent(game.title)}`;
-
         card.innerHTML = `
           <div class="card-thumbnail">
-            <img src="${imageUrl}" alt="${game.title} preview" loading="lazy" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x225/1f2833/ff007f?text=Play+Now';">
-            ${game.tag ? `<span class="badge-tag">${game.tag}</span>` : ''}
+            <img src="${game.image}" alt="${game.title}" onerror="this.src='https://via.placeholder.com/400x225/121520/00f0ff?text=${encodeURIComponent(game.title)}'">
+            <span class="badge-tag">JUGAR 🔥</span>
           </div>
           <div class="card-content">
             <h2 class="game-name">${game.title}</h2>
             <p class="game-description">${game.description}</p>
           </div>
         `;
-
         grid.appendChild(card);
       });
     }
 
-    document.addEventListener("DOMContentLoaded", renderGameCatalog);
+    document.addEventListener("DOMContentLoaded", () => {
+      renderCatalog();
+      const savedUser = localStorage.setItem("loop_player_name", localStorage.getItem("loop_player_name") || "");
+      const user = localStorage.getItem("loop_player_name");
+      if(user) document.getElementById("userAuthBtn").innerText = `JUGADOR: ${user.toUpperCase()}`;
+    });
   </script>
-
 </body>
 </html>
