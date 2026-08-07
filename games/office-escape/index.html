@@ -42,6 +42,9 @@ main{flex:1;min-height:0;display:flex;justify-content:center;padding:8px 10px;ov
 #coffeeFill{height:100%;width:0;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,#a06a14 6px 12px);transition:width .25s}
 #coffeeCount{font:16px 'VT323',monospace;color:var(--dim);min-width:58px;text-align:right}
 #playfield{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+/* [+] MOBILE: lift the board up so the joystick fits below, outside the frame */
+body.touch #playfield{align-items:flex-start;padding-top:2px}
+body.touch #hint{display:none}
 #frame{position:relative;padding:8px;border:2px solid #39456b;border-radius:10px;background:linear-gradient(#232a3f,#151a2b);box-shadow:0 18px 44px rgba(0,0,0,.55),inset 0 0 0 2px #0b0e18;max-width:100%;max-height:100%}
 #screen{position:relative;background:#05060c;line-height:0;font-size:10px}
 canvas#game{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none}
@@ -103,11 +106,11 @@ canvas#game{display:block;width:100%;height:100%;image-rendering:pixelated;image
 #adFill{height:100%;background:var(--mint);width:100%}
 .end-btns{display:flex;gap:.8em;justify-content:center;margin-top:1em;flex-wrap:wrap}
 #hint{padding:6px 0 2px;text-align:center;font:16px 'VT323',monospace;color:var(--dim);flex-shrink:0}
-#dpad{position:fixed;right:12px;bottom:12px;z-index:60;display:none;touch-action:none;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:5px;opacity:.9}
-#dpad.show{display:grid}
-#dpad button{font-size:17px;color:var(--ink);background:rgba(28,36,62,.85);border:2px solid var(--line);border-radius:7px}
-#dpad button.on{background:var(--accent);color:#1a1206}
-#dpad .mid{display:flex;align-items:center;justify-content:center;font-size:18px;opacity:.6}
+/* [+] VIRTUAL JOYSTICK (mobile only, outside the board) */
+#joywrap{display:none;justify-content:center;align-items:center;padding:6px 0 8px;flex-shrink:0}
+body.touch #joywrap{display:flex}
+#joybase{position:relative;width:112px;height:112px;border-radius:50%;background:rgba(28,36,62,.65);border:2px solid var(--line);touch-action:none;box-shadow:inset 0 0 0 2px rgba(0,0,0,.4)}
+#joyknob{position:absolute;left:50%;top:50%;width:48px;height:48px;margin:-24px 0 0 -24px;border-radius:50%;background:var(--accent);box-shadow:0 3px 0 #7a4a0d;pointer-events:none}
 footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-shrink:0}
 .mq{display:flex;width:max-content;animation:mq 30s linear infinite;font:17px 'VT323',monospace;color:var(--dim);padding:4px 0}
 .mq span{padding-right:3em}
@@ -198,6 +201,8 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
         <div class="scanlines"></div>
       </div></div>
     </div>
+    <!-- [+] Virtual joystick, outside the board (mobile) -->
+    <div id="joywrap"><div id="joybase"><div id="joyknob"></div></div></div>
     <div id="hint"></div>
   </section>
 </main>
@@ -205,11 +210,6 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
   <span>☕ OFFICE ESCAPE ★ CLIMB THE TOWER ★ CUBICLE FARM → IT & SERVERS → EXEC PENTHOUSE ★ 🍩 STINK MODE: BOSSES FAINT ★ ⚡ ×2 POINTS ★ 🛡 SHIELD (1 PER FLOOR) ★ 👻 INVISIBLE: BOSSES CONFUSED ★ 🚪 GRAB ALL COFFEE, THEN HIT THE EXIT ★</span>
   <span>☕ OFFICE ESCAPE ★ CLIMB THE TOWER ★ CUBICLE FARM → IT & SERVERS → EXEC PENTHOUSE ★ 🍩 STINK MODE: BOSSES FAINT ★ ⚡ ×2 POINTS ★ 🛡 SHIELD (1 PER FLOOR) ★ 👻 INVISIBLE: BOSSES CONFUSED ★ 🚪 GRAB ALL COFFEE, THEN HIT THE EXIT ★</span>
 </div></footer>
-<div id="dpad" aria-hidden="true">
-  <span></span><button type="button" data-d="u">▲</button><span></span>
-  <button type="button" data-d="l">◀</button><span class="mid">☕</span><button type="button" data-d="r">▶</button>
-  <span></span><button type="button" data-d="d">▼</button><span></span>
-</div>
 <script>
 (function(){'use strict';
 var T=16,COLS=15,ROWS=17,W=COLS*T,H=ROWS*T,TOTAL=35,SHADOW_MAX=7,FAINT_TIME=4,BOOST_TIME=15,CONFUSE_TIME=12;
@@ -460,7 +460,6 @@ function doGameOver(){state='over';sfx.over();
  $('adCol2').style.display=adUsedBig?'none':'flex';
  ovOver.classList.remove('hidden');
  if(typeof window.saveLoopToWinScore === 'function'){ try{window.saveLoopToWinScore(score);}catch(e){} }
- /* Show Top 10 only when the run is over and there is no ad left to watch */
  if(adUsedSmall && adUsedBig && typeof window.ltwShowTop === 'function'){ setTimeout(function(){ window.ltwShowTop(); }, 500); }
 }
 
@@ -636,6 +635,29 @@ screenEl.addEventListener('pointerdown',function(e){pStart={x:e.clientX,y:e.clie
 screenEl.addEventListener('pointerup',function(e){if(!pStart)return;var dx=e.clientX-pStart.x,dy=e.clientY-pStart.y;pStart=null;
  if(Math.max(Math.abs(dx),Math.abs(dy))<14){primaryAction();return;}
  if(Math.abs(dx)>Math.abs(dy))setDir(dx>0?R:L);else setDir(dy>0?D:U);});
+screenEl.addEventListener('pointercancel',function(){pStart=null;});
+
+/* [+] VIRTUAL JOYSTICK: drag the ball to steer (mobile, outside the board) */
+(function(){
+ var base=$('joybase'),knob=$('joyknob');
+ var active=false,id=null,cx=0,cy=0,RAD=40;
+ function center(){var r=base.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;}
+ function handle(e){
+   var dx=e.clientX-cx,dy=e.clientY-cy;
+   var dist=Math.sqrt(dx*dx+dy*dy);
+   var cl=Math.min(dist,RAD);
+   var nx=dist>0?dx/dist*cl:0, ny=dist>0?dy/dist*cl:0;
+   knob.style.transform='translate('+nx+'px,'+ny+'px)';
+   if(dist<8)return;
+   if(Math.abs(dx)>Math.abs(dy))setDir(dx>0?R:L);else setDir(dy>0?D:U);
+ }
+ base.addEventListener('pointerdown',function(e){active=true;id=e.pointerId;center();if(base.setPointerCapture)base.setPointerCapture(id);handle(e);e.preventDefault();});
+ base.addEventListener('pointermove',function(e){if(!active||e.pointerId!==id)return;handle(e);e.preventDefault();});
+ function end(e){if(e.pointerId!==id)return;active=false;id=null;knob.style.transform='translate(0,0)';}
+ base.addEventListener('pointerup',end);
+ base.addEventListener('pointercancel',end);
+})();
+
 ovMenu.addEventListener('click',function(){openSelect();});
 $('btnStart').addEventListener('click',function(e){e.stopPropagation();openSelect();});
 $('btnTop').addEventListener('click',function(e){e.stopPropagation(); if(window.ltwShowTop) window.ltwShowTop();});
@@ -647,14 +669,10 @@ $('ad2').addEventListener('click',function(e){e.stopPropagation();startAd('big')
 $('btnPause').addEventListener('click',function(){initAudio();togglePause();});
 $('btnSound').addEventListener('click',function(){initAudio();muted=!muted;try{localStorage.setItem('oe-mute',muted?'1':'0');}catch(e){}paintSound();});
 document.querySelectorAll('.s-card').forEach(function(c){c.addEventListener('click',function(e){e.stopPropagation();chooseChar(c.dataset.char);});});
-var dpad=$('dpad'),DMAP={u:U,d:D,l:L,r:R};
-document.querySelectorAll('#dpad button').forEach(function(b){
- b.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();initAudio();setDir(DMAP[b.dataset.d]);b.classList.add('on');});
- ['pointerup','pointerleave','pointercancel'].forEach(function(ev){b.addEventListener(ev,function(){b.classList.remove('on');});});});
-if('ontouchstart' in window||navigator.maxTouchPoints>0)dpad.classList.add('show');
-document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#dpad,#screen'))e.preventDefault();});
+if('ontouchstart' in window||navigator.maxTouchPoints>0)document.body.classList.add('touch');
+document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.target.closest('#screen,#joybase'))e.preventDefault();});
 document.addEventListener('visibilitychange',function(){if(document.hidden&&state==='play')togglePause();});
-document.addEventListener('touchmove',function(e){if(e.target.closest&&e.target.closest('#playfield,#dpad'))e.preventDefault();},{passive:false});
+document.addEventListener('touchmove',function(e){if(e.target.closest&&e.target.closest('#playfield,#joybase,#joywrap'))e.preventDefault();},{passive:false});
 
 function fit(){var aw=playfield.clientWidth-8,ah=playfield.clientHeight-8;
  var s=Math.max(.5,Math.min(aw/(W+20),ah/(H+20)));
@@ -663,7 +681,7 @@ function fit(){var aw=playfield.clientWidth-8,ah=playfield.clientHeight-8;
 addEventListener('resize',fit);addEventListener('orientationchange',fit);
 if(window.ResizeObserver)new ResizeObserver(fit).observe(playfield);
 
-$('hint').textContent=('ontouchstart' in window)?'SWIPE TO MOVE · TAP TO START':'WASD / ARROWS · P = PAUSE · M = SOUND';
+$('hint').textContent=('ontouchstart' in window)?'DRAG THE BALL TO MOVE':'WASD / ARROWS · P = PAUSE · M = SOUND';
 paintSound();hiEl.textContent=pad4(hiScore);
 var last=0;
 function loop(ts){requestAnimationFrame(loop);var dt=Math.min(.05,(ts-last)/1000||0);last=ts;
@@ -679,7 +697,6 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
 <!-- ========================================================= -->
 <!-- MÓDULO LEADERBOARD SUPABASE (LoopToWin) — SOLO REGISTRADOS  -->
 <!-- GAME_ID = "office-escape" | ALL US ENGLISH                 -->
-<!-- TOP 10 = centered modal, shown only on demand / game-over  -->
 <!-- ========================================================= -->
 <script>
 (function() {
@@ -732,7 +749,6 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
     `;
     document.head.appendChild(style);
 
-    /* Centered Top-10 modal (hidden by default; never covers the playfield) */
     const topOverlay = document.createElement('div');
     topOverlay.id = 'ltw-top-overlay';
     topOverlay.innerHTML = `
