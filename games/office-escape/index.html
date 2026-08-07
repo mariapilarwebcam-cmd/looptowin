@@ -449,7 +449,6 @@ function levelClear(){state='clear';sfx.win();flash('green');
  $('clearScore').textContent=score;$('clearHi').textContent=hiScore;
  $('btnNext').textContent=last?'↻ PLAY AGAIN':'▶ NEXT FLOOR';
  ovClear.classList.remove('hidden');
- /* [+] Enviar puntuación al completar el juego al leaderboard global */
  if(last && typeof window.saveLoopToWinScore === 'function'){ try{window.saveLoopToWinScore(score);}catch(e){} }
 }
 function doGameOver(){state='over';sfx.over();
@@ -458,22 +457,10 @@ function doGameOver(){state='over';sfx.over();
  $('adCol1').style.display=adUsedSmall?'none':'flex';
  $('adCol2').style.display=adUsedBig?'none':'flex';
  ovOver.classList.remove('hidden');
- /* [+] Enviar puntuación al leaderboard global */
  if(typeof window.saveLoopToWinScore === 'function'){ try{window.saveLoopToWinScore(score);}catch(e){} }
 }
 
-function ensurePlayerName(){
- try{
-   var n=localStorage.getItem('loop_player_name');
-   if(!n){
-     n=prompt('Enter your name for the GLOBAL LEADERBOARD:','Player');
-     if(!n)n='Player';
-     n=String(n).slice(0,20).trim()||'Player';
-     localStorage.setItem('loop_player_name',n);
-   }
- }catch(e){ try{localStorage.setItem('loop_player_name','Player');}catch(e2){} }
-}
-function openSelect(){initAudio();sfx.ui();state='select';ovMenu.classList.add('hidden');ovSelect.classList.remove('hidden');previewsDirty=true;ensurePlayerName();}
+function openSelect(){initAudio();sfx.ui();state='select';ovMenu.classList.add('hidden');ovSelect.classList.remove('hidden');previewsDirty=true;}
 function chooseChar(k){selectedChar=k;ovSelect.classList.add('hidden');startRun();}
 function startRun(){score=0;lives=3;shieldOn=false;boostT=0;confuseT=0;boostChip.classList.remove('on');ghostChip.classList.remove('on');adUsedSmall=false;adUsedBig=false;resetLevel(1);state='play';sfx.ui();msg(selectedChar==='female'?"SHE'S ON THE CLOCK — RUN!":"HE'S ON THE CLOCK — LET'S GO!",'good');}
 function nextFloor(){ovClear.classList.add('hidden');
@@ -684,15 +671,17 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
 </script>
 
 <!-- ========================================================= -->
-<!-- MÓDULO AUTOMÁTICO DE LEADERBOARD SUPABASE (LoopToWin)      -->
-<!-- Integrado con GAME_ID = "office-escape"                    -->
+<!-- MÓDULO LEADERBOARD SUPABASE (LoopToWin) — SOLO REGISTRADOS  -->
+<!-- GAME_ID = "office-escape" | ALL US ENGLISH                 -->
 <!-- ========================================================= -->
 <script>
 (function() {
   const GAME_ID = "office-escape";
-
   const SUPABASE_URL = 'https://cgfmcawubrtlkyhduvka.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZm1jYXd1YnJ0bGt5aGR1dmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYxMDY3NzEsImV4cCI6MjEwMTY4Mjc3MX0.iwZuIPjfV9cAjy9Xw5SNe602-tN3Xg-6vBgrA14nUCs';
+  const NAME_KEY = 'loop_player_name';
+  const REG_KEY  = 'loop_registered_' + GAME_ID;
+  const GUEST_NAMES = ['invitado','guest','player','anon',''];
 
   if (!document.getElementById('supabase-sdk')) {
     const script = document.createElement('script');
@@ -706,55 +695,74 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
 
   function initLeaderboardSystem() {
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const playerName = localStorage.getItem("loop_player_name") || "Player";
 
     const style = document.createElement('style');
     style.innerHTML = `
       @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@400;600&display=swap');
-      
       #ltw-leaderboard-box {
-        position: fixed;
-        bottom: 15px;
-        right: 15px;
-        width: 260px;
-        background: #121520;
-        border: 1px solid rgba(0, 240, 255, 0.4);
-        border-radius: 12px;
-        padding: 12px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        position: fixed; bottom: 15px; right: 15px; width: 260px;
+        background: #121520; border: 1px solid rgba(0,240,255,0.4); border-radius: 12px;
+        padding: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        font-family: 'Outfit', sans-serif; z-index: 99999; color: #fff;
+      }
+      #ltw-leaderboard-box h4 { font-family:'Orbitron',sans-serif; color:#ffea00; font-size:0.85rem; margin:0 0 8px 0; text-align:center; letter-spacing:0.5px; }
+      .ltw-item { display:flex; justify-content:space-between; font-size:0.78rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+      .ltw-item .ltw-name { color:#00f0ff; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px; }
+      .ltw-item .ltw-pts { color:#ff0055; font-weight:800; }
+      #ltw-register-overlay {
+        position: fixed; inset: 0; z-index: 100000; display: none;
+        align-items: center; justify-content: center; background: rgba(5,8,15,0.85);
         font-family: 'Outfit', sans-serif;
-        z-index: 99999;
-        color: #fff;
       }
-      #ltw-leaderboard-box h4 {
-        font-family: 'Orbitron', sans-serif;
-        color: #ffea00;
-        font-size: 0.85rem;
-        margin: 0 0 8px 0;
-        text-align: center;
-        letter-spacing: 0.5px;
+      #ltw-register-box {
+        width: 300px; background:#121520; border:1px solid rgba(0,240,255,0.5); border-radius:14px;
+        padding:18px; text-align:center; color:#fff; box-shadow:0 0 30px rgba(0,0,0,0.9);
       }
-      .ltw-item {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.78rem;
-        padding: 4px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+      #ltw-register-box h4 { font-family:'Orbitron',sans-serif; color:#ffea00; margin:0 0 8px 0; font-size:0.95rem; }
+      #ltw-register-box p { font-size:0.8rem; color:#cfd6e4; margin:0 0 12px 0; }
+      #ltw-reg-name {
+        width:100%; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,240,255,0.4);
+        background:#0b0e16; color:#fff; font-size:0.9rem; outline:none; margin-bottom:12px;
       }
-      .ltw-item .ltw-name { color: #00f0ff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
-      .ltw-item .ltw-pts { color: #ff0055; font-weight: 800; }
+      .ltw-reg-btns { display:flex; gap:8px; justify-content:center; }
+      .ltw-reg-btns button {
+        font-family:'Orbitron',sans-serif; font-size:0.7rem; padding:8px 10px; border-radius:8px; cursor:pointer; border:none;
+      }
+      #ltw-reg-save { background:#00f0ff; color:#00131a; font-weight:700; }
+      #ltw-reg-skip { background:#2a2f3d; color:#cfd6e4; }
     `;
     document.head.appendChild(style);
 
     const box = document.createElement('div');
     box.id = 'ltw-leaderboard-box';
     box.innerHTML = `
-      <h4>🏆 TOP 10 GLOBAL</h4>
+      <h4>🏆 GLOBAL TOP 10</h4>
       <div id="ltw-list-container">
-        <div class="ltw-item"><span class="ltw-name">Cargando...</span></div>
+        <div class="ltw-item"><span class="ltw-name">Loading...</span></div>
       </div>
     `;
     document.body.appendChild(box);
+
+    const regOverlay = document.createElement('div');
+    regOverlay.id = 'ltw-register-overlay';
+    regOverlay.innerHTML = `
+      <div id="ltw-register-box">
+        <h4>📝 REGISTER FOR THE TOP 10</h4>
+        <p>Your score of <b id="ltw-reg-score" style="color:#ffea00">0</b> pts won't be saved until you register.</p>
+        <input id="ltw-reg-name" maxlength="20" placeholder="Your name" autocomplete="off">
+        <div class="ltw-reg-btns">
+          <button id="ltw-reg-save">SAVE & SUBMIT</button>
+          <button id="ltw-reg-skip">PLAY AS GUEST</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(regOverlay);
+
+    function isRegistered(){
+      try { return localStorage.getItem(REG_KEY) === '1' && (localStorage.getItem(NAME_KEY)||'').trim().length > 0; }
+      catch(e){ return false; }
+    }
+    function getName(){ try { return (localStorage.getItem(NAME_KEY)||'').trim(); } catch(e){ return ''; } }
 
     async function loadTop10() {
       const { data } = await supabaseClient
@@ -762,17 +770,18 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
         .select('player_name, score')
         .eq('game_id', GAME_ID)
         .order('score', { ascending: false })
-        .limit(10);
+        .limit(100);
+
+      const clean = (data||[]).filter(e => e.player_name && !GUEST_NAMES.includes(String(e.player_name).toLowerCase()));
+      const top = clean.slice(0,10);
 
       const container = document.getElementById("ltw-list-container");
       container.innerHTML = "";
-
-      if (!data || data.length === 0) {
-        container.innerHTML = `<div class="ltw-item"><span class="ltw-name">¡Sé el primero en jugar!</span></div>`;
+      if (top.length === 0) {
+        container.innerHTML = `<div class="ltw-item"><span class="ltw-name">Be the first to score!</span></div>`;
         return;
       }
-
-      data.forEach((entry, idx) => {
+      top.forEach((entry, idx) => {
         const row = document.createElement('div');
         row.className = 'ltw-item';
         row.innerHTML = `
@@ -783,15 +792,37 @@ try{resetLevel(1);booted=true;fit();}catch(err){grid=BASES[0].map(function(r){re
       });
     }
 
-    window.saveLoopToWinScore = async function(finalScore) {
-      if (!finalScore || finalScore <= 0) return;
-      const name = localStorage.getItem("loop_player_name") || "Player";
+    async function insertScore(name, score) {
       try {
         await supabaseClient.from('leaderboard').insert([
-          { game_id: GAME_ID, player_name: name, score: finalScore }
+          { game_id: GAME_ID, player_name: name, score: score }
         ]);
         loadTop10();
       } catch(e){ console.warn('[LTW] Score not saved:', e); }
+    }
+
+    function showRegisterModal(score) {
+      document.getElementById('ltw-reg-score').textContent = score;
+      regOverlay.style.display = 'flex';
+      const nameInput = document.getElementById('ltw-reg-name');
+      nameInput.value = getName();
+      nameInput.style.borderColor = 'rgba(0,240,255,0.4)';
+      const saveBtn = document.getElementById('ltw-reg-save');
+      const skipBtn = document.getElementById('ltw-reg-skip');
+      saveBtn.onclick = async function(){
+        const name = nameInput.value.trim().slice(0,20);
+        if(!name){ nameInput.focus(); nameInput.style.borderColor='#ff0055'; return; }
+        try { localStorage.setItem(NAME_KEY, name); localStorage.setItem(REG_KEY, '1'); } catch(e){}
+        regOverlay.style.display = 'none';
+        await insertScore(name, score);
+      };
+      skipBtn.onclick = function(){ regOverlay.style.display = 'none'; };
+    }
+
+    window.saveLoopToWinScore = async function(finalScore) {
+      if (!finalScore || finalScore <= 0) return;
+      if (isRegistered()) { await insertScore(getName(), finalScore); }
+      else { showRegisterModal(finalScore); }
     };
 
     if (typeof window.gameOver === 'function') {
