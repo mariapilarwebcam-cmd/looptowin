@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0a0d16;--panel:#141a2b;--line:#2b3552;--ink:#eef1ff;--dim:#8b93b8;--amber:#ffb43a;--mint:#4be3b0;--red:#ff5866;--safe:#5ee07a;--purple:#a05cff;--yellow:#ffd23f;--accent:var(--amber)}
-:root{--dpad-btn:clamp(54px,17vw,72px);--dpad-gap:8px;--dpad-pad:10px}
+:root{--dpad-btn:clamp(60px,20vw,88px);--dpad-gap:10px;--dpad-pad:10px}
 body.shadow{--accent:#5ee07a;--mint:#8dff9e;--safe:#baffc9}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden}
@@ -125,11 +125,13 @@ body.touch #dpad{display:grid}
   transition:transform .05s ease, box-shadow .05s ease, background .05s ease;
   -webkit-user-select:none;user-select:none}
 #dpad button:active,#dpad button.on{transform:translateY(3px) scale(.94);box-shadow:0 1px 0 rgba(0,0,0,.45);background:var(--accent);color:#1a1206}
+/* [+] Layout de 2 filas: arriba solo en la fila 1, izquierda/abajo/derecha en la fila 2.
+   Se quitó el círculo decorativo del centro (ya no ocupa una tercera fila), así el pad
+   es más bajo, cabe siempre dentro de la pantalla y los botones pueden ser más grandes. */
 #dpad .du{grid-column:2;grid-row:1}
 #dpad .dl{grid-column:1;grid-row:2}
-#dpad .dc{grid-column:2;grid-row:2;pointer-events:none;background:rgba(28,36,62,.4);border:2px solid var(--line);border-radius:50%;box-shadow:none}
+#dpad .dd{grid-column:2;grid-row:2}
 #dpad .dr{grid-column:3;grid-row:2}
-#dpad .dd{grid-column:2;grid-row:3}
 footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-shrink:0}
 .mq{display:flex;width:max-content;animation:mq 30s linear infinite;font:17px 'VT323',monospace;color:var(--dim);padding:4px 0}
 .mq span{padding-right:3em}
@@ -138,7 +140,7 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
   .logo{font-size:10px}
   header{padding:5px 10px}
   #hint{display:none}
-  :root{--dpad-btn:clamp(46px,15vw,60px);--dpad-pad:6px}
+  :root{--dpad-btn:clamp(50px,17vw,68px);--dpad-pad:8px}
 }
 </style>
 </head>
@@ -246,9 +248,8 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
 <div id="dpad" aria-hidden="true">
   <button type="button" data-d="u" class="du">▲</button>
   <button type="button" data-d="l" class="dl">◀</button>
-  <div class="dc"></div>
-  <button type="button" data-d="r" class="dr">▶</button>
   <button type="button" data-d="d" class="dd">▼</button>
+  <button type="button" data-d="r" class="dr">▶</button>
 </div>
 <footer><div class="mq">
   <span>☕ OFFICE ESCAPE ★ CLIMB THE TOWER ★ CUBICLE FARM → IT & SERVERS → EXEC PENTHOUSE ★ 🍩 STINK MODE: BOSSES FAINT ★ ⚡ ×2 POINTS ★ 🛡 SHIELD (1 PER FLOOR) ★ 👻 INVISIBLE: BOSSES CONFUSED ★ 🚪 GRAB ALL COFFEE, THEN HIT THE EXIT ★</span>
