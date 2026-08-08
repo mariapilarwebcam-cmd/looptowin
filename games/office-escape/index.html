@@ -22,7 +22,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:8px
 .iconbtn{width:36px;height:36px;font-size:15px;background:var(--panel);border:2px solid var(--line);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 #05070d}
 .iconbtn:active{transform:translateY(2px);box-shadow:none}
 main{flex:1;min-height:0;display:flex;justify-content:center;padding:6px 8px;overflow:hidden;z-index:1}
-#stage{width:min(98vw,560px);display:flex;flex-direction:column;min-height:0}
+#stage{width:min(98vw,560px);display:flex;flex-direction:column;min-height:0;overflow:hidden}
 #hud{display:flex;gap:6px;padding:2px 0 6px;flex-shrink:0}
 .hud-block{flex:1;background:var(--panel);border:2px solid var(--line);padding:5px 4px 2px;text-align:center;box-shadow:0 3px 0 #05070d}
 .hud-label{display:block;font:7px 'Press Start 2P',monospace;color:var(--dim);letter-spacing:1px;margin-bottom:2px}
@@ -41,6 +41,7 @@ main{flex:1;min-height:0;display:flex;justify-content:center;padding:6px 8px;ove
 #coffeebar{flex:1;height:10px;border:2px solid var(--line);background:#0c101c}
 #coffeeFill{height:100%;width:0;background:repeating-linear-gradient(90deg,var(--accent) 0 6px,#a06a14 6px 12px);transition:width .25s}
 #coffeeCount{font:16px 'VT323',monospace;color:var(--dim);min-width:58px;text-align:right}
+/* [+] playfield es el único flexible: el pad NUNCA se corta */
 #playfield{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 body.touch #hint{display:none}
 body.touch footer{display:none}
@@ -105,7 +106,7 @@ canvas#game{display:block;width:100%;height:100%;image-rendering:pixelated;image
 #adFill{height:100%;background:var(--mint);width:100%}
 .end-btns{display:flex;gap:.8em;justify-content:center;margin-top:1em;flex-wrap:wrap}
 #hint{padding:6px 0 2px;text-align:center;font:16px 'VT323',monospace;color:var(--dim);flex-shrink:0}
-/* [+] PAD compacto (56px) para que quepa completo y suba */
+/* [+] PAD fijo (flex-shrink:0): NUNCA se corta; el tablero cede si hace falta */
 #dpad{display:none;grid-template-columns:repeat(3,56px);grid-auto-rows:56px;gap:0;justify-content:center;margin:0 auto 2px;flex-shrink:0}
 body.touch #dpad{display:grid}
 #dpad button{font-size:22px;color:var(--ink);background:rgba(28,36,62,.85);border:1px solid var(--line);margin:0;touch-action:none}
@@ -682,10 +683,13 @@ document.addEventListener('contextmenu',function(e){if(e.target.closest&&e.targe
 document.addEventListener('visibilitychange',function(){if(document.hidden&&state==='play')togglePause();});
 document.addEventListener('touchmove',function(e){if(e.target.closest&&e.target.closest('#playfield,#dpad'))e.preventDefault();},{passive:false});
 
-/* [+] fit(): usa el espacio REAL de #playfield (ya excluye el pad) para que NADA se corte */
+/* [+] TAMAÑO ESTABLE: el tablero se ancla al contenedor #playfield, que SIEMPRE
+   reserva el espacio del pad (flex-shrink:0). El cuadro cede si hace falta;
+   los controles NUNCA se cortan. Sin matemáticas frágiles de window.innerHeight. */
 function fit(){
- var pw=playfield.clientWidth-16, ph=playfield.clientHeight-16;
- var s=Math.max(.4,Math.min(pw/(W+16),ph/(H+16)));
+ var pw=playfield.clientWidth, ph=playfield.clientHeight;
+ var s=Math.min(pw/(W+18), ph/(H+18));
+ s=Math.max(.4, Math.min(s, 2));
  screenEl.style.width=Math.floor(W*s)+'px';
  screenEl.style.height=Math.floor(H*s)+'px';
  screenEl.style.fontSize=Math.max(8,Math.min(17,11*s))+'px';
