@@ -105,15 +105,15 @@ canvas#game{display:block;width:100%;height:100%;image-rendering:pixelated;image
 #adFill{height:100%;background:var(--mint);width:100%}
 .end-btns{display:flex;gap:.8em;justify-content:center;margin-top:1em;flex-wrap:wrap}
 #hint{padding:6px 0 2px;text-align:center;font:16px 'VT323',monospace;color:var(--dim);flex-shrink:0}
-/* [+] 4-ARROW PAD (keyboard layout, tight, raised) — mobile only */
-#dpad{display:none;grid-template-columns:repeat(3,56px);grid-auto-rows:56px;gap:0;justify-content:center;margin:2px auto 6px;flex-shrink:0}
+/* [+] BIGGER, TIGHTER 4-ARROW PAD (mobile) */
+#dpad{display:none;grid-template-columns:repeat(3,64px);grid-auto-rows:64px;gap:0;justify-content:center;margin:2px auto 6px;flex-shrink:0}
 body.touch #dpad{display:grid}
-#dpad button{font-size:20px;color:var(--ink);background:rgba(28,36,62,.85);border:1px solid var(--line);margin:0;touch-action:none}
+#dpad button{font-size:26px;color:var(--ink);background:rgba(28,36,62,.85);border:1px solid var(--line);margin:0;touch-action:none}
 #dpad button.on{background:var(--accent);color:#1a1206}
-#dpad .du{grid-column:2;grid-row:1;border-radius:8px 8px 0 0}
-#dpad .dl{grid-column:1;grid-row:2;border-radius:8px 0 0 8px}
+#dpad .du{grid-column:2;grid-row:1;border-radius:10px 10px 0 0}
+#dpad .dl{grid-column:1;grid-row:2;border-radius:10px 0 0 10px}
 #dpad .dd{grid-column:2;grid-row:2}
-#dpad .dr{grid-column:3;grid-row:2;border-radius:0 8px 8px 0}
+#dpad .dr{grid-column:3;grid-row:2;border-radius:0 10px 10px 0}
 footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-shrink:0}
 .mq{display:flex;width:max-content;animation:mq 30s linear infinite;font:17px 'VT323',monospace;color:var(--dim);padding:4px 0}
 .mq span{padding-right:3em}
@@ -204,7 +204,6 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
         <div class="scanlines"></div>
       </div></div>
     </div>
-    <!-- [+] 4-arrow pad, keyboard layout, tight & raised (mobile) -->
     <div id="dpad" aria-hidden="true">
       <button type="button" data-d="u" class="du">▲</button>
       <button type="button" data-d="l" class="dl">◀</button>
@@ -221,6 +220,7 @@ footer{border-top:2px solid var(--line);background:#0c101c;overflow:hidden;flex-
 <script>
 (function(){'use strict';
 var T=16,COLS=15,ROWS=17,W=COLS*T,H=ROWS*T,TOTAL=35,SHADOW_MAX=7,FAINT_TIME=4,BOOST_TIME=15,CONFUSE_TIME=12;
+var TURN_BUFFER=5; /* [+] px de buffer: aplica tu giro hasta 5px antes del centro = más reacción */
 var AD_URL_SMALL='https://onionclose.com/uemh9qkxa?key=efbed62ee9e2ca610f0121da4bfecb0f';
 function $(id){return document.getElementById(id);}
 var canvas=$('game'),ctx=canvas.getContext('2d');
@@ -417,9 +417,14 @@ function arriveAt(a,ghost){var cx=Math.floor(a.px/T),cy=Math.floor(a.py/T);a.px=
   if(p&&(p.x||p.y)&&(p.x!==a.dir.x||p.y!==a.dir.y)&&passable(cx+p.x,cy+p.y,false))a.dir={x:p.x,y:p.y};
   if((a.dir.x||a.dir.y)&&!passable(cx+a.dir.x,cy+a.dir.y,false))a.dir={x:0,y:0};}
  a.nextDist=T;}
+/* [+] advance con buffer de giro (TURN_BUFFER) para mejor reacción */
 function advance(a,dt,ghost){var rem=a.speed*dt,guard=8,cx,cy,p,step;
  while(rem>1e-4&&guard-->0){cx=Math.floor(a.px/T);cy=Math.floor(a.py/T);
   if(!a.dir.x&&!a.dir.y){p=a.pending;if(p&&(p.x||p.y)&&passable(cx+p.x,cy+p.y,ghost)){a.dir={x:p.x,y:p.y};a.nextDist=T;}else break;}
+  /* buffer: si estoy a <=TURN_BUFFER del centro y hay un giro válido, aplícalo ya */
+  if(!ghost&&a.pending&&(a.pending.x||a.pending.y)&&(a.pending.x!==a.dir.x||a.pending.y!==a.dir.y)
+     &&a.nextDist<=TURN_BUFFER&&passable(cx+a.pending.x,cy+a.pending.y,false)){
+     a.px=cx*T+T/2;a.py=cy*T+T/2;a.dir={x:a.pending.x,y:a.pending.y};a.nextDist=T;}
   step=Math.min(rem,a.nextDist);a.px+=a.dir.x*step;a.py+=a.dir.y*step;rem-=step;a.nextDist-=step;
   if(a.nextDist<=1e-3)arriveAt(a,ghost);}}
 
@@ -641,16 +646,24 @@ addEventListener('keydown',function(e){var k=e.key.toLowerCase();initAudio();
 var pStart=null;
 screenEl.addEventListener('pointerdown',function(e){pStart={x:e.clientX,y:e.clientY};initAudio();});
 screenEl.addEventListener('pointerup',function(e){if(!pStart)return;var dx=e.clientX-pStart.x,dy=e.clientY-pStart.y;pStart=null;
- if(Math.max(Math.abs(dx),Math.abs(dy))<14){primaryAction();return;}
+ if(Math.max(Math.abs(dx),Math.abs(dy))<10){primaryAction();return;} /* [+] swipe más sensible (10px) */
  if(Math.abs(dx)>Math.abs(dy))setDir(dx>0?R:L);else setDir(dy>0?D:U);});
 screenEl.addEventListener('pointercancel',function(){pStart=null;});
 
-/* [+] 4-ARROW PAD handlers */
+/* [+] PAD MÁS GRANDE Y SENSIBLE: reacciona al tocar y al deslizar el dedo entre flechas */
 var dpad=$('dpad'),DMAP={u:U,d:D,l:L,r:R};
-document.querySelectorAll('#dpad button').forEach(function(b){
- b.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();initAudio();setDir(DMAP[b.dataset.d]);b.classList.add('on');});
- ['pointerup','pointerleave','pointercancel'].forEach(function(ev){b.addEventListener(ev,function(){b.classList.remove('on');});});
-});
+var padBtns=dpad.querySelectorAll('button'),padActive=false,padId=null;
+function padTrigger(b){ if(!b||!b.dataset||!b.dataset.d)return; setDir(DMAP[b.dataset.d]);
+  padBtns.forEach(function(x){x.classList.toggle('on',x===b);}); }
+dpad.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();initAudio();
+  padActive=true;padId=e.pointerId; var t=e.target.closest?e.target.closest('#dpad button'):null; padTrigger(t);});
+dpad.addEventListener('pointermove',function(e){ if(!padActive||e.pointerId!==padId)return;
+  var el=document.elementFromPoint(e.clientX,e.clientY);
+  if(el&&el.closest){ var b=el.closest('#dpad button'); if(b)padTrigger(b); } });
+function padEnd(e){ if(e.pointerId!==padId)return; padActive=false;padId=null;
+  padBtns.forEach(function(x){x.classList.remove('on');}); }
+dpad.addEventListener('pointerup',padEnd);
+dpad.addEventListener('pointercancel',padEnd);
 
 ovMenu.addEventListener('click',function(){openSelect();});
 $('btnStart').addEventListener('click',function(e){e.stopPropagation();openSelect();});
@@ -670,7 +683,7 @@ document.addEventListener('touchmove',function(e){if(e.target.closest&&e.target.
 
 function fit(){
  var touch=document.body.classList.contains('touch');
- var dpadH=touch?($('dpad').offsetHeight||112):0;
+ var dpadH=touch?($('dpad').offsetHeight||136):0;
  var stage=$('stage');
  var hudH=$('hud').offsetHeight,cofH=$('coffeerow').offsetHeight,hintH=$('hint').offsetHeight;
  var availW=stage.clientWidth-8;
