@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LoopToWin - Miner Adventure</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -514,7 +515,6 @@
         </div>
     </div>
 
-    <!-- PANTALLA DE INICIO -->
     <div id="start-screen">
         <div class="start-content">
             <h1 class="start-title">⛏️ LOOPTOWIN ⛏️</h1>
@@ -533,7 +533,6 @@
         </div>
     </div>
 
-    <!-- GAME OVER -->
     <div id="modal-gameover" class="modal hidden">
         <div class="modal-content">
             <h2>💥 ¡BOOM! 💥</h2>
@@ -551,7 +550,6 @@
         </div>
     </div>
 
-    <!-- TIENDA -->
     <div id="modal-shop" class="modal hidden">
         <div class="modal-content">
             <h2 data-i18n="shop_title">🛒 Tienda</h2>
@@ -577,7 +575,6 @@
         </div>
     </div>
 
-    <!-- MISIONES DIARIAS -->
     <div id="modal-daily" class="modal hidden">
         <div class="modal-content">
             <h2 data-i18n="daily_title">📅 Misiones Diarias</h2>
@@ -601,7 +598,6 @@
         </div>
     </div>
 
-    <!-- LEADERBOARD -->
     <div id="modal-leaderboard" class="modal hidden">
         <div class="modal-content">
             <h2 data-i18n="lb_title">🏆 Tabla de Clasificación</h2>
@@ -621,7 +617,6 @@
         </div>
     </div>
 
-    <!-- MISIONES SOCIALES -->
     <div id="modal-missions" class="modal hidden">
         <div class="modal-content">
             <h2 data-i18n="social_title">📢 Misiones Sociales</h2>
@@ -645,17 +640,9 @@
     <div id="explosion-overlay" class="hidden"></div>
 
     <script>
-        // ============================================================
-        // LOOP TOWIN v4.2 - AUTO-LOCALIZACIÓN ES / EN-US
-        // Detección: Telegram user language -> navigator.language
-        // ============================================================
-
         const tg = window.Telegram?.WebApp;
         if (tg) { tg.ready(); tg.expand(); }
 
-        // ============================================
-        // SISTEMA i18n (ES + EN nativo de USA)
-        // ============================================
         const I18N = {
             es: {
                 menu_shop: '🛒 Tienda', menu_rank: '🏆 Ranking', menu_daily: '📅 Diarias', menu_social: '📢 Social',
@@ -737,7 +724,7 @@
                 lb_my: 'My Rank', lb_score: 'Your current score', lb_rank: 'Your rank',
                 social_title: '📢 Social Missions', social_m1: '📢 Join our Telegram Channel', social_m2: '👥 Invite a Friend',
                 social_join: 'Join', social_invite: 'Invite',
-                share_text: 'Come play LoopToWin with me! 🎮⛏️',
+                share_text: 'Come play LoopToWin with me! 🎮️',
                 a_need: '❌ You need {n} 💰',
                 a_helmet: '✅ Helmet added to your inventory. It will absorb 1 explosion!',
                 a_scanner: '🔍 Mine detected at column {x}, row {y}! (marked for 3s)',
@@ -768,7 +755,6 @@
             return (navigator.language || navigator.userLanguage || 'en').toLowerCase();
         }
 
-        // es* -> Español | en* u otros -> Inglés US (estándar internacional)
         const LANG = detectLang().startsWith('es') ? 'es' : 'en';
 
         function t(key, params) {
@@ -784,9 +770,6 @@
             document.documentElement.lang = LANG;
         }
 
-        // ============================================
-        // CONFIGURACIÓN
-        // ============================================
         const CONFIG = {
             COLS: 6, ROWS: 10, CELL: 48,
             MINE_PERCENTAGE: { min: 25, max: 35 },
@@ -805,9 +788,6 @@
         const CANVAS_W = CONFIG.COLS * CONFIG.CELL;
         const CANVAS_H = CONFIG.ROWS * CONFIG.CELL;
 
-        // ============================================
-        // PERSISTENCIA
-        // ============================================
         function loadInt(key, def) {
             try { const v = parseInt(localStorage.getItem(key)); return isNaN(v) ? def : v; }
             catch (e) { return def; }
@@ -854,9 +834,6 @@
             document.getElementById('xp-fill').style.width = prog + '%';
         }
 
-        // ============================================
-        // MISIONES DIARIAS
-        // ============================================
         function todayStr() { const d = new Date(); return d.toISOString().slice(0, 10); }
 
         function loadDaily() {
@@ -869,9 +846,6 @@
         let daily = loadDaily();
         function saveDaily() { saveInt('looptowin_daily', JSON.stringify(daily)); }
 
-        // ============================================
-        // TESOROS
-        // ============================================
         const TREASURES = [
             { id: 'silver_coin',  value: 2,  weight: 22, scale: 0.55, emoji: '🥈' },
             { id: 'gold_coin',    value: 3,  weight: 18, scale: 0.55, emoji: '🪙' },
@@ -884,11 +858,8 @@
             { id: 'gold_chest',   value: 20, weight: 3,  scale: 0.90, emoji: '🧰' }
         ];
         const TREASURE_MAP = {};
-        TREASURES.forEach(t2 => TREASURE_MAP[t2.id] = t2);
+        TREASURES.forEach(tr => TREASURE_MAP[tr.id] = tr);
 
-        // ============================================
-        // TEMAS POR PISO
-        // ============================================
         const THEMES = {
             dirt: { bgTop: '#1a1a2e', bgDark: '#0f0f1a', canvasBg: '#161b26', glow: '#1c2230',
                 border: '#3a3a3a', groundA: '#5a4a3a', groundB: '#6b5a48', groundTop: '#7a6a55',
@@ -922,9 +893,6 @@
                 `linear-gradient(180deg, ${currentTheme.bgTop} 0%, ${currentTheme.bgDark} 100%)`;
         }
 
-        // ============================================
-        // SPRITE SHEETS
-        // ============================================
         const SPRITE_SHEETS = {
             miner: {
                 src: 'miner.jpg',
@@ -968,9 +936,6 @@
             }
         };
 
-        // ============================================
-        // ESTADO
-        // ============================================
         let gameState = {
             board: [], safePath: [],
             playerPos: { x: 0, y: 0 }, goalPos: { x: 0, y: 0 },
@@ -988,9 +953,6 @@
         let scannerMark = null;
         let nearMissUntil = 0;
 
-        // ============================================
-        // CARGA DE SPRITES
-        // ============================================
         const SPRITES = { miner: null, blocks: null, treasures: null };
         const sheetKeyed = { miner: true, blocks: true, treasures: true };
         const INSET = 0.006;
@@ -1036,9 +998,6 @@
             img.src = def.src;
         }
 
-        // ============================================
-        // GENERACIÓN DEL TABLERO
-        // ============================================
         function pickTreasure() {
             const total = TREASURES.reduce((s, tr) => s + tr.weight, 0);
             let r = Math.random() * total;
@@ -1160,9 +1119,6 @@
             return 99;
         }
 
-        // ============================================
-        // AVISO DE MINAS (i18n)
-        // ============================================
         function updateMineWarning() {
             let count = 0;
             const { x, y } = gameState.playerPos;
@@ -1184,9 +1140,6 @@
             }
         }
 
-        // ============================================
-        // FLOTANTES
-        // ============================================
         function spawnFloater(cellX, cellY, text, color) {
             const rect = canvas.getBoundingClientRect();
             if (!rect.width) return;
@@ -1202,9 +1155,6 @@
             setTimeout(() => el.remove(), 1200);
         }
 
-        // ============================================
-        // PORTADA / PLAY
-        // ============================================
         function showStartScreen() {
             gameState.started = false;
             gameState.isPaused = false;
@@ -1227,9 +1177,6 @@
             startNewFloor();
         }
 
-        // ============================================
-        // MOVIMIENTO
-        // ============================================
         function movePlayer(direction) {
             if (!gameState.started || gameState.gameOver || gameState.isPaused || gameState.locked) return;
 
@@ -1297,9 +1244,6 @@
             }
         }
 
-        // ============================================
-        // MINAS + NEAR-MISS
-        // ============================================
         function handleMineHit(x, y) {
             document.getElementById('game-container').classList.add('screen-shake');
             document.getElementById('explosion-overlay').classList.remove('hidden');
@@ -1404,9 +1348,6 @@
             }, 1000);
         }
 
-        // ============================================
-        // GAME OVER
-        // ============================================
         function triggerGameOver() {
             gameState.gameOver = true;
             gameState.locked = false;
@@ -1418,6 +1359,8 @@
             document.getElementById('go-xp').textContent = '+' + runStats.xp;
             document.getElementById('go-total').textContent = SAVE.gold + ' 💰';
             document.getElementById('modal-gameover').classList.remove('hidden');
+
+            if (window.reportarScoreSupabase) reportarScoreSupabase(gameState.score);
         }
 
         function revivePlayer() {
@@ -1450,21 +1393,12 @@
             startNewFloor();
         }
 
-        // ============================================
-        // ADS
-        // ============================================
         function showRewardedAd(onComplete) {
             console.log('📺 Showing rewarded ad...');
             setTimeout(() => {
                 console.log('✅ Ad completed');
                 if (onComplete) onComplete();
             }, 1000);
-            /* PRODUCTION:
-            if (window.AdsgramSDK) {
-                window.AdsgramSDK.showRewardedAd()
-                    .then(() => onComplete && onComplete())
-                    .catch(() => alert('❌ Ad failed to load'));
-            } */
         }
 
         function watchAd(cb) {
@@ -1475,9 +1409,6 @@
             });
         }
 
-        // ============================================
-        // TIENDA
-        // ============================================
         function openShop() {
             document.getElementById('shop-coins').textContent = SAVE.gold;
             document.getElementById('helmet-owned').textContent = SAVE.helmets;
@@ -1527,9 +1458,6 @@
             }
         }
 
-        // ============================================
-        // DIARIAS
-        // ============================================
         function openDaily() {
             refreshDailyUI();
             document.getElementById('modal-daily').classList.remove('hidden');
@@ -1580,9 +1508,6 @@
             }
         }
 
-        // ============================================
-        // LEADERBOARD / SOCIALES
-        // ============================================
         function openLeaderboard() {
             document.getElementById('my-score').textContent = gameState.score;
             document.getElementById('my-rank').textContent = calculateRank(gameState.score);
@@ -1601,6 +1526,8 @@
             });
             document.getElementById('modal-leaderboard').classList.remove('hidden');
             gameState.isPaused = true;
+
+            if (window.refrescarLeaderboardUI) refrescarLeaderboardUI();
         }
 
         function calculateRank(score) {
@@ -1651,9 +1578,6 @@
             event.target.classList.add('active');
         }
 
-        // ============================================
-        // UTILIDADES
-        // ============================================
         function random(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
         function shuffleArray(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } }
         function hash(x, y, s) { let h = x * 374761393 + y * 668265263 + s * 974711; h = (h ^ (h >> 13)) * 1274126177; return ((h ^ (h >> 16)) >>> 0) / 4294967295; }
@@ -1667,9 +1591,6 @@
             tEl.style.color = gameState.timer <= 10 ? '#ff4444' : gameState.timer <= 20 ? '#ffaa00' : '#ffd700';
         }
 
-        // ============================================
-        // PARTÍCULAS
-        // ============================================
         function spawnParticles(cx, cy, colors, count) {
             for (let i = 0; i < count; i++) {
                 particles.push({
@@ -1707,9 +1628,6 @@
             ctx.globalAlpha = 1;
         }
 
-        // ============================================
-        // MOTOR CANVAS
-        // ============================================
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = CANVAS_W;
@@ -1915,9 +1833,6 @@
             });
         }
 
-        // ============================================
-        // BUCLE
-        // ============================================
         function update(now) {
             const a = animState;
 
@@ -2001,9 +1916,6 @@
             }
         }
 
-        // ============================================
-        // EVENTOS
-        // ============================================
         function initEventListeners() {
             document.getElementById('btn-play').addEventListener('click', playGame);
 
@@ -2049,11 +1961,8 @@
             }));
         }
 
-        // ============================================
-        // INICIO
-        // ============================================
         function initGame() {
-            console.log('🎮 LoopToWin v4.2 - Language:', LANG);
+            console.log('🎮 LoopToWin v4.3 - Language:', LANG);
             applyI18n();
             initEventListeners();
             resizeCanvas();
@@ -2072,6 +1981,151 @@
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGame);
         else initGame();
+    </script>
+
+    <script>
+        // ---- CREDENCIALES SUPABASE (integradas) ----
+        const SUPABASE_URL = 'https://tifoffsjufptrhwodigm.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_4jnaQCSUhW-m54K96pujeA_GHouLsH-';
+
+        let sb = null;
+        try {
+            if (window.supabase?.createClient && SUPABASE_URL.startsWith('https://')) {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('🗄️ Supabase conectado');
+            } else {
+                console.warn('🗄️ Supabase sin configurar: leaderboard local');
+            }
+        } catch (e) {
+            console.error('🗄️ Error init Supabase:', e);
+        }
+
+        const MOCK_TOP5 = [
+            { username: 'MinerPro',     high_score: 5200 },
+            { username: 'GoldDigger',   high_score: 4800 },
+            { username: 'StoneBreaker', high_score: 3900 },
+            { username: 'DiamondHunter',high_score: 3200 },
+            { username: 'CaveExplorer', high_score: 2800 }
+        ];
+
+        function getTelegramUser() {
+            try {
+                const u = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                if (u && u.id) {
+                    const name = u.username || u.first_name || ('Miner_' + String(u.id).slice(-5));
+                    return { id: u.id, username: String(name).slice(0, 32) };
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo leer el user de Telegram:', e);
+            }
+            return null;
+        }
+
+        async function guardarPuntaje(telegramId, username, nuevoPuntaje) {
+            if (!sb) {
+                console.log('[LB] Sin Supabase. Puntaje local:', nuevoPuntaje);
+                return false;
+            }
+            if (telegramId == null || !Number.isFinite(nuevoPuntaje)) return false;
+
+            try {
+                const { data, error } = await sb
+                    .from('leaderboard')
+                    .select('telegram_id, high_score')
+                    .eq('telegram_id', telegramId)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (!data || nuevoPuntaje > data.high_score) {
+                    const { error: upErr } = await sb
+                        .from('leaderboard')
+                        .upsert({
+                            telegram_id: telegramId,
+                            username: username,
+                            high_score: nuevoPuntaje,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'telegram_id' });
+
+                    if (upErr) throw upErr;
+                    console.log('🏆 Nuevo récord guardado:', nuevoPuntaje);
+                    return true;
+                }
+
+                console.log('[LB] Puntaje menor al récord, sin cambios.');
+                return false;
+            } catch (e) {
+                console.error('[LB] guardarPuntaje error:', e.message);
+                return false;
+            }
+        }
+
+        function reportarScoreSupabase(score) {
+            const user = getTelegramUser();
+            if (!user) return;
+            guardarPuntaje(user.id, user.username, score);
+        }
+
+        async function obtenerTop5() {
+            if (!sb) return MOCK_TOP5;
+            try {
+                const { data, error } = await sb
+                    .from('leaderboard')
+                    .select('username, high_score')
+                    .order('high_score', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+                return (data && data.length) ? data : MOCK_TOP5;
+            } catch (e) {
+                console.error('[LB] obtenerTop5 error:', e.message);
+                return MOCK_TOP5;
+            }
+        }
+
+        async function obtenerMiRank(score) {
+            if (!sb) return '-';
+            try {
+                const { count, error } = await sb
+                    .from('leaderboard')
+                    .select('telegram_id', { count: 'exact', head: true })
+                    .gt('high_score', score);
+
+                if (error) throw error;
+                return '#' + (count + 1);
+            } catch (e) {
+                console.error('[LB] obtenerMiRank error:', e.message);
+                return '-';
+            }
+        }
+
+        async function refrescarLeaderboardUI() {
+            const list = document.getElementById('leaderboard-list');
+            if (!list) return;
+
+            list.innerHTML = '<li>⏳ ...</li>';
+            const top = await obtenerTop5();
+
+            list.innerHTML = '';
+            top.forEach((p, i) => {
+                const medal = ['🥇', '', '', '4.', '5.'][i] || (i + 1) + '.';
+                const li = document.createElement('li');
+                li.textContent = `${medal} ${p.username} - ${p.high_score} pts`;
+                list.appendChild(li);
+            });
+
+            const score = (typeof gameState !== 'undefined') ? gameState.score : 0;
+            const myScoreEl = document.getElementById('my-score');
+            const myRankEl = document.getElementById('my-rank');
+            if (myScoreEl) myScoreEl.textContent = score;
+            if (myRankEl) myRankEl.textContent = await obtenerMiRank(score);
+        }
+
+        window.guardarPuntaje = guardarPuntaje;
+        window.obtenerTop5 = obtenerTop5;
+        window.getTelegramUser = getTelegramUser;
+        window.reportarScoreSupabase = reportarScoreSupabase;
+        window.refrescarLeaderboardUI = refrescarLeaderboardUI;
     </script>
 </body>
 </html>
