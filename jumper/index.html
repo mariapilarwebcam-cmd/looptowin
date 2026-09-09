@@ -16,7 +16,15 @@
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         .panel { background:rgba(26,26,46,0.95); border:4px solid #00ff00; padding:15px 12px; max-width:95%; width:400px; text-align:center; box-shadow:0 0 30px rgba(0,255,0,0.3),8px 8px 0 #000; max-height:90vh; overflow:hidden; position:relative; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         
-        .shop-panel { overflow-y:auto; justify-content:flex-start; padding:20px 15px; max-height:85vh; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        /* CORRECCIÓN 2: Scroll forzado solo en Tienda y Personajes */
+        .shop-panel { 
+            overflow-y: auto !important; 
+            justify-content: flex-start !important; 
+            padding: 20px 15px; 
+            max-height: 85vh; 
+            touch-action: pan-y !important; 
+            -webkit-overflow-scrolling: touch; 
+        }
         .shop-panel::-webkit-scrollbar { width:6px; }
         .shop-panel::-webkit-scrollbar-track { background:rgba(0,0,0,0.5); border-radius:10px; }
         .shop-panel::-webkit-scrollbar-thumb { background:#00ff00; border-radius:10px; }
@@ -82,7 +90,19 @@
         .particle.animate { animation:particleFly 2s ease-out forwards; }
         @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
         
-        .character-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(65px,1fr)); gap:10px; margin:20px 0; max-height:45vh; overflow-y:auto; padding:5px; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        /* CORRECCIÓN 2: Scroll forzado solo en la grilla de personajes */
+        .character-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); 
+            gap: 10px; 
+            margin: 20px 0; 
+            max-height: 45vh; 
+            overflow-y: auto !important; 
+            padding: 5px; 
+            touch-action: pan-y !important; 
+            -webkit-overflow-scrolling: touch; 
+            width: 100%;
+        }
         
         .char-card { aspect-ratio:1; background:#000; border:3px solid #333; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:5px; cursor:pointer; border-radius:4px; }
         .char-card img { width:70%; height:70%; object-fit:contain; }
@@ -155,7 +175,7 @@
             <div class="logo">NEON<br>JUMPER</div>
             <div class="subtitle">⚡ 8-BIT ⚡</div>
             <div class="stats">
-                <div> <span id="menuBest">0</span></div>
+                <div>🏆 <span id="menuBest">0</span></div>
                 <div>🎮 <span id="menuGames">0</span></div>
                 <div id="vipMenuStat" style="display:none;">⭐ VIP</div>
             </div>
@@ -168,7 +188,7 @@
             <button class="btn btn-secondary" onclick="ui.showShop()" id="btnShop"> TIENDA</button>
             <button class="btn btn-gold" onclick="ui.showCharacters()" id="btnChars">👤 PERSONAJES</button>
             <button class="btn" onclick="ui.showLevels()" id="btnWall">🎨 NIVELES</button>
-            <button class="btn" onclick="ui.showEarn()" id="btnEarn"> OBTENER MONEDAS</button>
+            <button class="btn" onclick="ui.showEarn()" id="btnEarn">🎁 OBTENER MONEDAS</button>
             <button class="btn" style="background:#ffd700; color:#000;" onclick="ui.showPass()" id="btnPass">⭐ PASE VIP</button>
         </div>
     </div>
@@ -255,7 +275,7 @@
             <button class="btn" onclick="game.reviveWithAd()" id="btnRevive" style="background:#00ff00;">📺 REVIVIR (1x)</button>
             <div style="font-size:0.5em; color:#888; margin:10px;">(<span id="revivesLeft">5</span>/5 hoy)</div>
             <button class="btn" onclick="game.start()">🔄 REINTENTAR</button>
-            <button class="btn btn-secondary" onclick="ui.showMenu()"> MENÚ</button>
+            <button class="btn btn-secondary" onclick="ui.showMenu()">🏠 MENÚ</button>
         </div>
     </div>
 
@@ -291,7 +311,7 @@
     <!-- OBTENER MONEDAS -->
     <div class="ui-screen" id="earnScreen">
         <div class="panel" id="earnPanel">
-            <h2 id="earnTitle"> OBTENER MONEDAS GRATIS</h2>
+            <h2 id="earnTitle">🎁 OBTENER MONEDAS GRATIS</h2>
             <div class="earn-grid">
                 <div class="earn-card">
                     <div class="title" id="earnAdTitle">📺 ANUNCIO (+200)</div>
@@ -318,8 +338,8 @@
     // ============================================================
     const LANG = {
         es: {
-            btnPlay: '▶ JUGAR', btnShop: ' TIENDA', btnChars: ' PERSONAJES',
-            btnWall: ' NIVELES', btnEarn: '🎁 OBTENER MONEDAS', btnPass: '⭐ PASE VIP',
+            btnPlay: '▶ JUGAR', btnShop: ' TIENDA', btnChars: '👤 PERSONAJES',
+            btnWall: '🎨 NIVELES', btnEarn: '🎁 OBTENER MONEDAS', btnPass: '⭐ PASE VIP',
             shopTitle: 'TIENDA', shopBack: '← VOLVER',
             charsTitle: 'PERSONAJES', charsBack: '← VOLVER',
             wallTitle: '🎨 NIVELES DE DIFICULTAD', wallSub: 'Selecciona tu nivel. ¡A mayor dificultad, mayor recompensa!', wallBack: '← VOLVER',
@@ -328,7 +348,7 @@
             earnTitle: '🎁 OBTENER MONEDAS GRATIS',
             earnAdTitle: '📺 ANUNCIO (+200)',
             earnAdDesc: 'Mira un anuncio y gana 200 monedas',
-            earnRefTitle: ' INVITAR AMIGOS',
+            earnRefTitle: '👥 INVITAR AMIGOS',
             earnRefDesc: 'Invita a un amigo. Cuando juegue 5 partidas y vea 2 anuncios → +300 monedas para ti.',
             adCounter: 'Restantes: <span id="ads200Left">3</span>/3 hoy',
             refStatus: 'Amigos recompensados: <span id="refCount">0</span>',
@@ -362,11 +382,11 @@
             refStatus: 'Friends rewarded: <span id="refCount">0</span>',
             earnBack: '← BACK',
             btnAd200: 'WATCH AD',
-            btnShareRef: ' SHARE',
+            btnShareRef: '📤 SHARE',
             refCodeLabel: 'Code: ',
             reviveBtn: '📺 REVIVE (1x)',
-            retryBtn: ' RETRY',
-            menuBtn: ' MENU',
+            retryBtn: '🔄 RETRY',
+            menuBtn: '🏠 MENU',
             coinLabel: '●', diamondLabel: '♦', starsLabel: '⭐',
             locked: '🔒 Chests',
             vipWeekly: 'Weekly VIP',
@@ -602,7 +622,7 @@
         _agileBoost: false, _vipX2: false, _extraLife: false, _extraLifeUsed: false,
         _passiveShieldUsed: false, _vipReviveUsed: false,
         _deathX: null, _deathY: null,
-        _difficultyBase: 0, // CORRECCIÓN: punto de score desde el cual se cuenta la dificultad
+        _difficultyBase: 0,
         isDead: false,
         levelConfig: LEVEL_CONFIG[1],
         
@@ -712,8 +732,8 @@
             this.availablePowerups = [...state.inventory];
             state.adsUsedInGame = 0;
             this._deathX = null; this._deathY = null;
-            this._difficultyBase = 0; // CORRECCIÓN: al iniciar, dificultad cuenta desde 0
-            this.difficulty = 1.0; // CORRECCIÓN: velocidad inicial = 1.0
+            this._difficultyBase = 0;
+            this.difficulty = 1.0;
             if (this.shieldInterval) clearInterval(this.shieldInterval);
             this.springActive = false; this.doubleJumpActive = false; this.magnetActive = false; this.x2Active = false;
             if (this.springTimer) clearTimeout(this.springTimer);
@@ -1023,7 +1043,6 @@
             if (!this.running) return;
             const p = this.player;
             
-            // CORRECCIÓN: dificultad basada en score total, aumentando 0.1 cada 30 puntos
             const scoreSinceReset = this.score - this._difficultyBase;
             this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
             
@@ -1309,20 +1328,23 @@
             this.isDead = false;
             this.running = true;
             
-            // CORRECCIÓN: al revivir, la dificultad baja un nivel (equivalente a restar 30 al score)
-            this._difficultyBase = Math.max(0, this.score - 30);
-            // La dificultad se recalculará en el próximo update()
+            // CORRECCIÓN 1: Reiniciar dificultad a 1.0 desde el puntaje actual para evitar aceleración
+            this._difficultyBase = this.score;
+            this.difficulty = 1.0;
             
             const w = this.canvas.width;
             const h = this.canvas.height;
             const spawnX = (this._deathX !== null && this._deathX !== undefined)
                 ? Math.max(20, Math.min(this._deathX, w - this.player.w - 20))
                 : (w / 2 - 20);
+                
             this.player.x = spawnX;
             this.player.y = h - 250;
-            this.player.vx = 0;
+            this.player.vx = 0; // CORRECCIÓN 1: Eliminar inercia lateral residual
             this.player.vy = -10;
             this.player.jumpCount = 0;
+            
+            this.keys = {}; // CORRECCIÓN 1: Limpiar teclas presionadas que pudieran quedar "pegadas"
             
             this.enemies = [];
             this.projectiles = [];
@@ -1450,7 +1472,7 @@
                 } else {
                     const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
                     state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
-                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '' };
+                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
                 }
             } else if (type === 'silver') {
                 if (rand < 65) {
@@ -1472,7 +1494,7 @@
             } else if (type === 'gold') {
                 if (rand < 50) {
                     const amount = Math.floor(Math.random() * 181) + 100;
-                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '' };
+                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
                 } else if (rand < 80) {
                     const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
                     state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
@@ -1719,7 +1741,7 @@
                 const isLocked = (i === 3 || i === 4) && !vipActive;
                 if (isLocked) {
                     card.classList.add('locked');
-                    const lock = document.createElement('span'); lock.className = 'lock-icon'; lock.textContent = '';
+                    const lock = document.createElement('span'); lock.className = 'lock-icon'; lock.textContent = '🔒';
                     card.appendChild(lock);
                 }
                 if (state.wallpaper === i) card.classList.add('selected');
