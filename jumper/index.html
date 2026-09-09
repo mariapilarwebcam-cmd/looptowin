@@ -1,0 +1,1751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Jumper 8-Bit</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; touch-action:none; user-select:none; font-family:'Press Start 2P',cursive; }
+        body { background:#0a0a1a; color:#fff; overflow:hidden; width:100vw; height:100vh; }
+        canvas,img { image-rendering:pixelated; image-rendering:crisp-edges; }
+        #gameCanvas { display:block; position:absolute; top:0; left:0; width:100%; height:100%; }
+        .scanlines { position:fixed; top:0; left:0; width:100%; height:100%; background:linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3)); background-size:100% 4px; pointer-events:none; z-index:999; opacity:0.7; }
+        .ui-screen { position:absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center; background:rgba(0,0,0,0.85); z-index:10; padding:20px; backdrop-filter:blur(2px); }
+        .ui-screen.active { display:flex; animation:fadeIn 0.3s steps(4); }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .panel { background:rgba(26,26,46,0.95); border:4px solid #00ff00; padding:15px 12px; max-width:95%; width:400px; text-align:center; box-shadow:0 0 30px rgba(0,255,0,0.3),8px 8px 0 #000; max-height:90vh; overflow:hidden; position:relative; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .shop-panel { overflow-y:auto; justify-content:flex-start; padding:20px 15px; max-height:85vh; }
+        .shop-panel::-webkit-scrollbar { width:6px; }
+        .shop-panel::-webkit-scrollbar-track { background:rgba(0,0,0,0.5); border-radius:10px; }
+        .shop-panel::-webkit-scrollbar-thumb { background:#00ff00; border-radius:10px; }
+        .panel::before { content:''; position:absolute; top:-2px; left:-2px; right:-2px; bottom:-2px; background:linear-gradient(45deg,#00ff00,#00ffff,#ff00ff,#00ff00); background-size:300% 300%; z-index:-1; border-radius:10px; animation:borderGlow 4s ease infinite; }
+        @keyframes borderGlow { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
+        .logo { font-size:1.2em; color:#00ff00; margin-bottom:6px; text-shadow:0 0 20px #00ff00,0 0 40px #00ff00,4px 4px 0 #005500; line-height:1.2; animation:logoPulse 2s ease-in-out infinite; }
+        @keyframes logoPulse { 0%,100% { transform:scale(1); text-shadow:0 0 20px #00ff00,0 0 40px #00ff00; } 50% { transform:scale(1.03); text-shadow:0 0 30px #00ff00,0 0 60px #00ff00,0 0 80px #00ff00; } }
+        .subtitle { font-size:0.4em; color:#aaa; margin-bottom:6px; letter-spacing:2px; }
+        .stats { display:flex; justify-content:center; gap:12px; font-size:0.4em; color:#ccc; margin-bottom:8px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px; }
+        .stats span { color:#00ff00; }
+        .currency { display:flex; gap:10px; justify-content:center; margin:8px 0; font-size:0.6em; }
+        .currency-item { background:#000; border:2px solid #fff; padding:4px 8px; display:flex; align-items:center; gap:4px; border-radius:4px; }
+        .coin { color:#ffd700; }
+        .diamond { color:#00ffff; }
+        .btn { background:#00d4ff; border:4px solid #000; padding:8px 10px; margin:4px; border-radius:0; color:#000; font-size:0.5em; cursor:pointer; width:90%; box-shadow:4px 4px 0 #000; transition:all 0.1s; text-transform:uppercase; line-height:1.2; border-radius:4px; }
+        .btn:active { transform:translate(4px,4px); box-shadow:0 0 0 #000; }
+        .btn-secondary { background:#ff00ff; color:#fff; }
+        .btn-gold { background:#ffd700; }
+        .btn:disabled { background:#555; color:#888; cursor:not-allowed; transform:none; box-shadow:4px 4px 0 #000; }
+        .hud { position:absolute; top:15px; left:15px; right:15px; display:none; justify-content:space-between; font-size:0.7em; z-index:5; }
+        .hud.active { display:flex; }
+        .hud-item { background:rgba(0,0,0,0.8); border:3px solid #00ff00; padding:8px 12px; color:#00ff00; border-radius:4px; }
+        .powerup-bar { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); display:none; background:rgba(0,0,0,0.8); border:2px solid #00ff00; padding:8px 12px; border-radius:8px; z-index:6; gap:10px; flex-wrap:wrap; justify-content:center; max-width:90%; }
+        .powerup-bar.active { display:flex; }
+        .powerup-item { width:44px; height:44px; background:#222; border:2px solid #555; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; transition:all 0.2s; }
+        .powerup-item:hover { transform:scale(1.1); border-color:#00ff00; }
+        .powerup-item img { width:32px; height:32px; object-fit:contain; image-rendering:pixelated; }
+        .powerup-item .badge { position:absolute; top:-8px; right:-8px; background:#ff00ff; color:#fff; font-size:0.4em; padding:2px 6px; border-radius:10px; border:2px solid #000; }
+        .powerup-item.active-power { border-color:#ffd700; box-shadow:0 0 20px #ffd700; }
+        .shop-grid { display:grid; gap:20px; margin:25px 0; }
+        .chest-item { background:linear-gradient(135deg,#1a1a2e 0%,#0f0f1e 100%); border:4px solid; padding:20px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:15px; transition:all 0.2s; position:relative; overflow:hidden; border-radius:8px; }
+        .chest-item::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(45deg,transparent,rgba(255,255,255,0.1),transparent); transform:translateX(-100%); transition:transform 0.6s; }
+        .chest-item:hover::before { transform:translateX(100%); }
+        .chest-item:hover { transform:translateY(-5px) scale(1.02); filter:brightness(1.2); }
+        .chest-item:active { transform:translateY(-2px) scale(1); }
+        .chest-item.bronze { border-color:#cd7f32; box-shadow:0 0 20px rgba(205,127,50,0.5); }
+        .chest-item.silver { border-color:#c0c0c0; box-shadow:0 0 20px rgba(192,192,192,0.5); }
+        .chest-item.gold { border-color:#ffd700; box-shadow:0 0 30px rgba(255,215,0,0.6); }
+        .chest-display { width:100%; max-width:280px; height:180px; display:flex; align-items:center; justify-content:center; position:relative; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden; }
+        .chest-display img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+        .chest-info { text-align:center; width:100%; }
+        .chest-title { font-size:1.1em; margin-bottom:10px; text-transform:uppercase; }
+        .chest-price { color:#ffd700; font-size:0.9em; margin-bottom:10px; }
+        .chest-desc { font-size:0.5em; line-height:2; color:#aaa; }
+        .luxbox-container { position:relative; width:100%; max-width:400px; height:300px; display:flex; align-items:center; justify-content:center; margin:30px auto; }
+        .luxbox-chest { width:200px; height:150px; position:relative; transition:all 0.5s; }
+        .luxbox-chest img { width:100%; height:100%; object-fit:contain; image-rendering:pixelated; }
+        .luxbox-light { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:0; height:0; background:radial-gradient(circle,rgba(255,215,0,0.8) 0%,rgba(255,255,255,0.4) 40%,transparent 70%); border-radius:50%; opacity:0; pointer-events:none; }
+        .luxbox-opening .luxbox-chest { animation:chestShake 0.9s ease-in-out; }
+        .luxbox-opening .luxbox-light { animation:lightBurst 1.1s ease-out; }
+        .luxbox-opened .luxbox-chest { animation:chestOpen 0.5s ease-out forwards; }
+        @keyframes chestShake { 0%,100% { transform:translateX(0) rotate(0deg); } 20% { transform:translateX(-15px) rotate(-8deg); } 40% { transform:translateX(15px) rotate(8deg); } 60% { transform:translateX(-15px) rotate(-8deg); } 80% { transform:translateX(10px) rotate(5deg); } }
+        @keyframes chestOpen { 0% { transform:scale(1); opacity:1; } 50% { transform:scale(1.3); opacity:0.6; } 100% { transform:scale(0); opacity:0; } }
+        @keyframes lightBurst { 0% { width:0; height:0; opacity:0; } 40% { width:350px; height:350px; opacity:1; } 70% { width:550px; height:550px; opacity:0.8; } 100% { width:650px; height:650px; opacity:0; } }
+        .luxbox-reward { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); text-align:center; opacity:0; }
+        .luxbox-reward.show { animation:rewardAppear 0.5s ease-out forwards; }
+        @keyframes rewardAppear { 0% { transform:translate(-50%,-50%) scale(0) rotate(-180deg); opacity:0; } 50% { transform:translate(-50%,-50%) scale(1.3) rotate(10deg); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; } }
+        .luxbox-reward-icon { font-size:5em; margin-bottom:20px; animation:rewardGlow 2s ease-in-out infinite; display:flex; align-items:center; justify-content:center; }
+        @keyframes rewardGlow { 0%,100% { filter:drop-shadow(0 0 10px currentColor); transform:scale(1); } 50% { filter:drop-shadow(0 0 30px currentColor); transform:scale(1.1); } }
+        .luxbox-reward-text { font-size:0.9em; color:#ffd700; line-height:1.8; text-transform:uppercase; }
+        .particle { position:absolute; width:8px; height:8px; background:#ffd700; pointer-events:none; opacity:0; }
+        .particle.animate { animation:particleFly 2s ease-out forwards; }
+        @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
+        .character-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(65px,1fr)); gap:10px; margin:20px 0; max-height:45vh; overflow-y:auto; padding:5px; }
+        .char-card { aspect-ratio:1; background:#000; border:3px solid #333; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:5px; cursor:pointer; border-radius:4px; }
+        .char-card img { width:70%; height:70%; object-fit:contain; }
+        .char-card.unlocked { border-color:#00ff00; }
+        .char-card.selected { border-color:#ffd700; box-shadow:0 0 10px #ffd700; }
+        .char-card.locked { opacity:0.4; }
+        .char-card .lock { font-size:1.5em; }
+        .char-card .name { font-size:0.45em; color:#aaa; margin-top:5px; text-align:center; word-break:break-all; }
+        #loading { position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:100; display:flex; justify-content:center; align-items:center; flex-direction:column; gap:25px; }
+        .spinner { width:40px; height:40px; border:4px solid #333; border-top-color:#00ff00; animation:spin 0.8s steps(8) infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .flash { position:fixed; top:0; left:0; width:100%; height:100%; background:#fff; opacity:0; pointer-events:none; z-index:50; transition:opacity 0.05s; }
+        .flash.active { opacity:0.9; }
+        @keyframes canvasShake { 0% { transform:translate(0,0); } 10% { transform:translate(-10px,-5px); } 20% { transform:translate(10px,5px); } 30% { transform:translate(-8px,-3px); } 40% { transform:translate(8px,3px); } 50% { transform:translate(-6px,-2px); } 60% { transform:translate(6px,2px); } 70% { transform:translate(-4px,-1px); } 80% { transform:translate(4px,1px); } 90% { transform:translate(-2px,0); } 100% { transform:translate(0,0); } }
+        .canvas-shake { animation:canvasShake 0.5s ease-in-out; }
+        h2 { font-size:1em; margin-bottom:25px; color:#00ff00; line-height:1.5; }
+        .shield-indicator { position:absolute; top:65px; right:15px; background:#000; border:3px solid #00ffff; padding:8px; font-size:0.6em; color:#00ffff; display:none; border-radius:4px; }
+        .shield-indicator.active { display:block; animation:blink 0.5s steps(2) infinite; }
+        @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+        @keyframes shake { 0%,100% { transform:translateX(0); } 25% { transform:translateX(-8px); } 75% { transform:translateX(8px); } }
+        @media (max-width:480px) { .logo { font-size:1.0em; } .panel { padding:10px 6px; width:95%; } .btn { font-size:0.45em; padding:6px 8px; } .chest-display { height:120px; } .luxbox-container { height:200px; } .luxbox-chest { width:140px; height:100px; } .powerup-item { width:30px; height:30px; } .powerup-item img { width:22px; height:22px; } .currency { font-size:0.5em; gap:6px; } .currency-item { padding:3px 6px; } .stats { font-size:0.35em; gap:8px; } .subtitle { font-size:0.35em; } .shop-panel { padding:15px 10px; } }
+        .vip-badge { background:linear-gradient(135deg,#ffd700,#ff8800); color:#000; padding:2px 8px; border-radius:4px; font-size:0.5em; margin-left:5px; }
+        .char-card.vip { border-color:#ffd700; box-shadow:0 0 15px #ffd700; }
+        .pass-status { font-size:0.4em; color:#ffd700; margin-top:5px; }
+        .stars-btn { background:#ffd700; color:#000; border:3px solid #000; padding:4px 8px; font-size:0.4em; cursor:pointer; border-radius:4px; }
+        .upgrade-btn { background:#444; color:#fff; border:2px solid #fff; padding:2px 6px; font-size:0.35em; cursor:pointer; border-radius:4px; margin:2px; }
+        .upgrade-btn.enabled { background:#00ff00; color:#000; border-color:#00ff00; }
+        .upgrade-btn.stars { background:#ffd700; color:#000; border-color:#ffd700; }
+        .char-level { font-size:0.4em; color:#ffd700; margin-top:2px; }
+        .skill-value { font-size:0.3em; color:#aaa; }
+        .max-btn { background:#ff00ff; color:#fff; border:2px solid #ff00ff; padding:2px 6px; font-size:0.35em; cursor:pointer; border-radius:4px; margin:2px; }
+        .vip-weekly { color:#ffd700; font-size:0.3em; margin-top:2px; }
+
+        .wallpaper-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(80px,1fr)); gap:15px; margin:20px 0; width:100%; justify-items:center; }
+        .wp-card { width:80px; height:80px; border:4px solid #333; border-radius:8px; overflow:hidden; cursor:pointer; position:relative; background:#000; }
+        .wp-card img { width:100%; height:100%; object-fit:cover; }
+        .wp-card.selected { border-color:#ffd700; box-shadow:0 0 15px #ffd700; }
+        .wp-card.locked { opacity:0.5; filter:grayscale(1); cursor:not-allowed; }
+        .wp-card .lock-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.5em; color:#ff4444; text-shadow:0 0 10px #000; }
+        .wp-label { font-size:0.35em; color:#aaa; margin-top:5px; text-align:center; }
+
+        .earn-grid { display:flex; flex-direction:column; gap:20px; width:100%; margin:20px 0; }
+        .earn-card { background:rgba(0,0,0,0.5); border:3px solid #00ff00; padding:20px; border-radius:8px; }
+        .earn-card .title { font-size:0.8em; color:#ffd700; margin-bottom:10px; }
+        .earn-card .desc { font-size:0.4em; color:#aaa; margin-bottom:10px; }
+        .referral-code { font-size:0.6em; color:#00ffff; background:#000; padding:5px 10px; border-radius:4px; margin:10px 0; display:inline-block; }
+        .friend-list { font-size:0.35em; color:#aaa; max-height:100px; overflow-y:auto; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div class="scanlines"></div>
+    <div class="flash" id="flash"></div>
+    <div class="shield-indicator" id="shieldIndicator">ESCUDO: <span id="shieldTime">30</span>s</div>
+    
+    <div class="hud" id="hud">
+        <div class="hud-item">● <span id="hudCoins">0</span></div>
+        <div class="hud-item">SCORE: <span id="hudScore">0</span></div>
+        <div class="hud-item" id="vipHud" style="display:none; background:#ffd700; color:#000;">VIP</div>
+    </div>
+
+    <div class="powerup-bar" id="powerupBar"></div>
+
+    <div id="loading"><div class="spinner"></div><div style="color:#00ff00; font-size:0.8em;">CARGANDO...</div></div>
+
+    <!-- MENÚ PRINCIPAL -->
+    <div class="ui-screen" id="menuScreen">
+        <div class="panel" id="menuPanel">
+            <div class="logo">NEON<br>JUMPER</div>
+            <div class="subtitle">⚡ 8-BIT ⚡</div>
+            <div class="stats">
+                <div>🏆 <span id="menuBest">0</span></div>
+                <div>🎮 <span id="menuGames">0</span></div>
+                <div id="vipMenuStat" style="display:none;">⭐ VIP</div>
+            </div>
+            <div class="currency">
+                <div class="currency-item"><span class="coin">●</span> <span id="menuCoins">0</span></div>
+                <div class="currency-item"><span class="diamond">♦</span> <span id="menuDiamonds">0</span></div>
+                <div class="currency-item" id="starsDisplay">⭐ <span id="menuStars">0</span></div>
+            </div>
+            <button class="btn" onclick="game.start()" id="btnPlay">▶ JUGAR</button>
+            <button class="btn btn-secondary" onclick="ui.showShop()" id="btnShop"> TIENDA</button>
+            <button class="btn btn-gold" onclick="ui.showCharacters()" id="btnChars">👤 PERSONAJES</button>
+            <button class="btn" onclick="ui.showLevels()" id="btnWall">🎨 NIVELES</button>
+            <button class="btn" onclick="ui.showEarn()" id="btnEarn">🎁 OBTENER MONEDAS</button>
+            <button class="btn" style="background:#ffd700; color:#000;" onclick="ui.showPass()" id="btnPass">⭐ PASE VIP</button>
+        </div>
+    </div>
+
+    <!-- TIENDA -->
+    <div class="ui-screen" id="shopScreen">
+        <div class="panel shop-panel" id="shopPanel">
+            <h2 id="shopTitle">TIENDA</h2>
+            <div class="currency">
+                <div class="currency-item"><span class="coin">●</span> <span id="shopCoins">0</span></div>
+                <div class="currency-item"><span class="diamond">♦</span> <span id="shopDiamonds">0</span></div>
+            </div>
+            <div class="shop-grid">
+                <div class="chest-item bronze" onclick="shop.open('bronze')">
+                    <div class="chest-display" id="displayBronze"><img src="" alt="Cofre Bronce" id="imgBronze"></div>
+                    <div class="chest-info">
+                        <div class="chest-title"> COFRE BRONCE</div>
+                        <div class="chest-price">100 ●</div>
+                        <div class="chest-desc">80% Monedas (10-40)<br>20% Power-up</div>
+                    </div>
+                </div>
+                <div class="chest-item silver" onclick="shop.open('silver')">
+                    <div class="chest-display" id="displaySilver"><img src="" alt="Cofre Plata" id="imgSilver"></div>
+                    <div class="chest-info">
+                        <div class="chest-title"> COFRE PLATA</div>
+                        <div class="chest-price">300 ●</div>
+                        <div class="chest-desc">65% Monedas (30-105)<br>25% Power-up<br>10% Personaje</div>
+                    </div>
+                </div>
+                <div class="chest-item gold" onclick="shop.open('gold')">
+                    <div class="chest-display" id="displayGold"><img src="" alt="Cofre Oro" id="imgGold"></div>
+                    <div class="chest-info">
+                        <div class="chest-title"> COFRE ORO</div>
+                        <div class="chest-price">800 ●</div>
+                        <div class="chest-desc">50% Monedas (100-280)<br>30% Power-up<br>15% Personaje<br>5% Diamantes</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="ui.showMenu()" id="shopBack">← VOLVER</button>
+        </div>
+    </div>
+
+    <!-- COFRE -->
+    <div class="ui-screen" id="openingScreen">
+        <div class="panel">
+            <h2>ABRIENDO COFRE...</h2>
+            <div class="luxbox-container" id="luxboxContainer">
+                <div class="luxbox-chest" id="luxboxChest"><img src="" alt="Cofre" id="luxboxImg"></div>
+                <div class="luxbox-light" id="luxboxLight"></div>
+                <div class="luxbox-reward" id="luxboxReward" style="display:none;">
+                    <div class="luxbox-reward-icon" id="luxboxIcon">🎉</div>
+                    <div class="luxbox-reward-text" id="luxboxText">Cargando...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECOMPENSA -->
+    <div class="ui-screen" id="rewardScreen">
+        <div class="panel">
+            <h2>¡RECOMPENSA!</h2>
+            <div id="rewardIcon" style="font-size:4em; margin:20px; display:flex; align-items:center; justify-content:center;"></div>
+            <div id="rewardText" style="font-size:0.8em; margin-bottom:25px; line-height:1.6; color:#ffd700;"></div>
+            <button class="btn" onclick="ui.closeReward()">OK</button>
+        </div>
+    </div>
+
+    <!-- PERSONAJES -->
+    <div class="ui-screen" id="charactersScreen">
+        <div class="panel" id="charsPanel">
+            <h2 id="charsTitle">PERSONAJES</h2>
+            <div class="character-grid" id="charGrid"></div>
+            <button class="btn btn-secondary" onclick="ui.showMenu()" id="charsBack">← VOLVER</button>
+        </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="ui-screen" id="gameOverScreen">
+        <div class="panel">
+            <h2>GAME OVER</h2>
+            <div style="font-size:3em; margin:20px;">🏆</div>
+            <div style="font-size:1em; margin:15px; color:#00ff00;">SCORE: <span id="finalScore">0</span></div>
+            <div style="font-size:0.7em; color:#ffd700; margin:15px;">+<span id="earnedCoins">0</span> ●</div>
+            <button class="btn" onclick="game.reviveWithAd()" id="btnRevive" style="background:#00ff00;">📺 REVIVIR (1x)</button>
+            <div style="font-size:0.5em; color:#888; margin:10px;">(<span id="revivesLeft">5</span>/5 hoy)</div>
+            <button class="btn" onclick="game.start()">🔄 REINTENTAR</button>
+            <button class="btn btn-secondary" onclick="ui.showMenu()">🏠 MENÚ</button>
+        </div>
+    </div>
+
+    <!-- PASE VIP -->
+    <div class="ui-screen" id="passScreen">
+        <div class="panel" id="passPanel">
+            <h2 id="passTitle">⭐ PASE VIP</h2>
+            <div style="font-size:0.6em; margin:10px; line-height:2;" id="passDesc">
+                <div>✔ Multiplicador 2X de monedas</div>
+                <div>✔ Sin anuncios obligatorios</div>
+                <div>✔ 1 Cofre de Oro gratis diario</div>
+                <div>✔ Escudo permanente</div>
+                <div>✔ 10 personajes VIP semanales (nivel 6)</div>
+                <div>✔ Niveles 3 y 4 desbloqueados</div>
+            </div>
+            <div style="font-size:0.7em; margin:15px; color:#ffd700;" id="passPrice">Precio: 50 ⭐ (7 días)</div>
+            <button class="btn" style="background:#ffd700; color:#000;" onclick="ui.buyPass()" id="passBuy">COMPRAR PASE</button>
+            <button class="btn btn-secondary" onclick="ui.showMenu()" id="passBack">← VOLVER</button>
+            <div id="passStatus" style="font-size:0.5em; margin-top:10px; color:#aaa;"></div>
+        </div>
+    </div>
+
+    <!-- NIVELES (ANTES FONDOS) -->
+    <div class="ui-screen" id="wallpaperScreen">
+        <div class="panel" id="wallPanel">
+            <h2 id="wallTitle">🎨 NIVELES DE DIFICULTAD</h2>
+            <div style="font-size:0.4em; color:#aaa; margin-bottom:10px;" id="wallSub">Selecciona tu nivel. ¡A mayor dificultad, mayor recompensa!</div>
+            <div class="wallpaper-grid" id="wpGrid"></div>
+            <button class="btn btn-secondary" onclick="ui.showMenu()" id="wallBack">← VOLVER</button>
+        </div>
+    </div>
+
+    <!-- OBTENER MONEDAS -->
+    <div class="ui-screen" id="earnScreen">
+        <div class="panel" id="earnPanel">
+            <h2 id="earnTitle">🎁 OBTENER MONEDAS GRATIS</h2>
+            <div class="earn-grid">
+                <div class="earn-card">
+                    <div class="title" id="earnAdTitle">📺 ANUNCIO (+200)</div>
+                    <div class="desc" id="earnAdDesc">Mira un anuncio y gana 200 monedas</div>
+                    <button class="btn" onclick="game.watchAd200()" id="btnAd200" style="background:#ffd700; color:#000;">VER ANUNCIO</button>
+                    <div style="font-size:0.4em; color:#888; margin-top:8px;" id="adCounter">Restantes: <span id="ads200Left">3</span>/3 hoy</div>
+                </div>
+                <div class="earn-card">
+                    <div class="title" id="earnRefTitle">👥 INVITAR AMIGOS</div>
+                    <div class="desc" id="earnRefDesc">Invita a un amigo. Cuando juegue 5 partidas y vea 2 anuncios → +300 monedas para ti.</div>
+                    <div class="referral-code" id="refCode">Código: <span id="myRefCode">CARGANDO...</span></div>
+                    <button class="btn" onclick="ui.shareReferral()" id="btnShareRef" style="background:#00d4ff;">📤 COMPARTIR</button>
+                    <div style="font-size:0.4em; color:#aaa; margin-top:10px;" id="refStatus">Amigos recompensados: <span id="refCount">0</span></div>
+                    <div class="friend-list" id="friendList"></div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="ui.showMenu()" id="earnBack">← VOLVER</button>
+        </div>
+    </div>
+
+    <script>
+    // ============================================================
+    // 0. TRADUCCIONES
+    // ============================================================
+    const LANG = {
+        es: {
+            btnPlay: '▶ JUGAR', btnShop: ' TIENDA', btnChars: '👤 PERSONAJES',
+            btnWall: '🎨 NIVELES', btnEarn: '🎁 OBTENER MONEDAS', btnPass: '⭐ PASE VIP',
+            shopTitle: 'TIENDA', shopBack: '← VOLVER',
+            charsTitle: 'PERSONAJES', charsBack: '← VOLVER',
+            wallTitle: '🎨 NIVELES DE DIFICULTAD', wallSub: 'Selecciona tu nivel. ¡A mayor dificultad, mayor recompensa!', wallBack: '← VOLVER',
+            passTitle: '⭐ PASE VIP', passPrice: 'Precio: 50 ⭐ (7 días)', passBuy: 'COMPRAR PASE', passBack: '← VOLVER',
+            passDesc: ['✔ Multiplicador 2X de monedas','✔ Sin anuncios obligatorios','✔ 1 Cofre de Oro gratis diario','✔ Escudo permanente','✔ 10 personajes VIP semanales (nivel 6)','✔ Niveles 3 y 4 desbloqueados'],
+            earnTitle: '🎁 OBTENER MONEDAS GRATIS',
+            earnAdTitle: '📺 ANUNCIO (+200)',
+            earnAdDesc: 'Mira un anuncio y gana 200 monedas',
+            earnRefTitle: '👥 INVITAR AMIGOS',
+            earnRefDesc: 'Invita a un amigo. Cuando juegue 5 partidas y vea 2 anuncios → +300 monedas para ti.',
+            adCounter: 'Restantes: <span id="ads200Left">3</span>/3 hoy',
+            refStatus: 'Amigos recompensados: <span id="refCount">0</span>',
+            earnBack: '← VOLVER',
+            btnAd200: 'VER ANUNCIO',
+            btnShareRef: '📤 COMPARTIR',
+            refCodeLabel: 'Código: ',
+            reviveBtn: '📺 REVIVIR (1x)',
+            retryBtn: '🔄 REINTENTAR',
+            menuBtn: '🏠 MENÚ',
+            coinLabel: '●', diamondLabel: '♦', starsLabel: '⭐',
+            locked: '🔒 Cofres',
+            vipWeekly: 'VIP semanal',
+            maxLabel: 'MAX',
+            noSkill: 'Sin habilidad',
+        },
+        en: {
+            btnPlay: '▶ PLAY', btnShop: ' SHOP', btnChars: '👤 CHARACTERS',
+            btnWall: '🎨 LEVELS', btnEarn: '🎁 GET COINS', btnPass: '⭐ VIP PASS',
+            shopTitle: 'SHOP', shopBack: '← BACK',
+            charsTitle: 'CHARACTERS', charsBack: '← BACK',
+            wallTitle: '🎨 DIFFICULTY LEVELS', wallSub: 'Select your level. Higher difficulty, higher rewards!', wallBack: '← BACK',
+            passTitle: '⭐ VIP PASS', passPrice: 'Price: 50 ⭐ (7 days)', passBuy: 'BUY PASS', passBack: '← BACK',
+            passDesc: ['✔ 2X coin multiplier','✔ No forced ads','✔ 1 free Gold Chest daily','✔ Permanent shield','✔ 10 weekly VIP characters (level 6)','✔ Levels 3 and 4 unlocked'],
+            earnTitle: '🎁 GET FREE COINS',
+            earnAdTitle: '📺 AD (+200)',
+            earnAdDesc: 'Watch an ad and earn 200 coins',
+            earnRefTitle: '👥 INVITE FRIENDS',
+            earnRefDesc: 'Invite a friend. When they play 5 games and watch 2 ads → +300 coins for you.',
+            adCounter: 'Remaining: <span id="ads200Left">3</span>/3 today',
+            refStatus: 'Friends rewarded: <span id="refCount">0</span>',
+            earnBack: '← BACK',
+            btnAd200: 'WATCH AD',
+            btnShareRef: '📤 SHARE',
+            refCodeLabel: 'Code: ',
+            reviveBtn: '📺 REVIVE (1x)',
+            retryBtn: '🔄 RETRY',
+            menuBtn: '🏠 MENU',
+            coinLabel: '●', diamondLabel: '♦', starsLabel: '⭐',
+            locked: '🔒 Chests',
+            vipWeekly: 'Weekly VIP',
+            maxLabel: 'MAX',
+            noSkill: 'No skill',
+        }
+    };
+
+    let currentLang = 'es';
+    function detectLanguage() {
+        const lang = navigator.language || navigator.languages?.[0] || 'es';
+        currentLang = lang.startsWith('es') ? 'es' : 'en';
+    }
+    detectLanguage();
+    function t(key) { return LANG[currentLang]?.[key] || LANG.es[key] || key; }
+
+    // ============================================================
+    // 1. DEFINICIÓN DE PERSONAJES
+    // ============================================================
+    const ALL_CHARACTERS_RAW = [
+        'jumper', 'nurse', 'oscar', 'painter', 'pilot', 'pirate', 'police', 'ringmaster', 'sam', 'samurai', 'snorkel',
+        'soldier', 'stealth', 'tom', 'toxic', 'viking', 'worker', 'adventuress', 'adventurous', 'ana', 'archaeologist', 
+        'astronaut', 'boos', 'boster', 'boy', 'caballero', 'chef', 'christmas', 'clown', 'cool', 'cowboy', 
+        'cyber', 'devil', 'disco', 'ed', 'firefighter', 'gamer', 'genie', 'goodboy', 'jack', 'jason', 
+        'jester', 'juan', 'kawaii', 'king', 'konungr', 'larry', 'lenny', 'lisa', 'magician', 'mary', 'mexican', 
+        'michael', 'monocle', 'musketeer'
+    ];
+
+    const CHARACTER_CLASSES = {};
+    ['king', 'musketeer', 'ringmaster'].forEach(name => CHARACTER_CLASSES[name] = 'vip');
+    ['konungr', 'michael'].forEach(name => CHARACTER_CLASSES[name] = 'competitive');
+    ['viking', 'soldier', 'firefighter', 'samurai', 'cyber'].forEach(name => CHARACTER_CLASSES[name] = 'tank');
+    ['archaeologist', 'adventuress', 'adventurous', 'astronaut', 'pirate', 'snorkel', 'magician', 'genie', 'juan', 'boos'].forEach(name => CHARACTER_CLASSES[name] = 'collector');
+    ['stealth', 'devil', 'gamer', 'jester', 'cowboy', 'disco', 'cool', 'jason', 'boster'].forEach(name => CHARACTER_CLASSES[name] = 'agile');
+    ALL_CHARACTERS_RAW.forEach(name => { if (!CHARACTER_CLASSES[name]) CHARACTER_CLASSES[name] = 'common'; });
+
+    const SKILLS = {
+        common: { name: 'Sin habilidad', desc: 'Solo coleccionable' },
+        collector: { name: 'Imán', desc: 'Radio de atracción de monedas' },
+        agile: { name: 'Impulso Inicial', desc: 'Distancia de salto automático' },
+        tank: { name: 'Escudo Pasivo', desc: 'Absorbe 1 impacto/púas gratis' },
+        competitive: { name: 'Multiplicador Score', desc: 'Incrementa distancia final para ranking' },
+        vip: { name: 'Combo VIP', desc: 'Imán + Revivir gratis' }
+    };
+
+    // ============================================================
+    // 2. ESTADO DEL JUGADOR
+    // ============================================================
+    let tgUser = null;
+    if (window.Telegram && window.Telegram.WebApp) {
+        tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+    }
+
+    const state = {
+        coins: parseInt(localStorage.getItem('nj_coins')) || 500,
+        diamonds: parseInt(localStorage.getItem('nj_diamonds')) || 10,
+        stars: parseInt(localStorage.getItem('nj_stars')) || 0,
+        chars: JSON.parse(localStorage.getItem('nj_chars')) || { 'jumper': true },
+        selected: localStorage.getItem('nj_selected') || 'jumper',
+        games: parseInt(localStorage.getItem('nj_games')) || 0,
+        best: parseInt(localStorage.getItem('nj_best')) || 0,
+        adsToday: parseInt(localStorage.getItem('nj_adsToday')) || 0,
+        lastAdDate: localStorage.getItem('nj_lastAdDate') || new Date().toDateString(),
+        inventory: JSON.parse(localStorage.getItem('nj_inventory')) || [],
+        vipPass: JSON.parse(localStorage.getItem('nj_vipPass')) || { active: false, expiry: 0 },
+        lastFreeGold: localStorage.getItem('nj_lastFreeGold') || '',
+        ranking: JSON.parse(localStorage.getItem('nj_ranking')) || [],
+        levels: JSON.parse(localStorage.getItem('nj_levels')) || {},
+        wallpaper: parseInt(localStorage.getItem('nj_wallpaper')) || 1,
+        ads200Today: parseInt(localStorage.getItem('nj_ads200Today')) || 0,
+        lastAd200Date: localStorage.getItem('nj_lastAd200Date') || new Date().toDateString(),
+        referralCode: localStorage.getItem('nj_referralCode') || (tgUser ? tgUser.id.toString() : 'REF' + Date.now().toString(36).toUpperCase()),
+        referrals: JSON.parse(localStorage.getItem('nj_referrals')) || { invited: [], rewarded: [] }
+    };
+
+    if (!localStorage.getItem('nj_referralCode')) {
+        localStorage.setItem('nj_referralCode', state.referralCode);
+    }
+
+    if (state.lastAd200Date !== new Date().toDateString()) {
+        state.ads200Today = 0; state.lastAd200Date = new Date().toDateString();
+        localStorage.setItem('nj_ads200Today', 0); localStorage.setItem('nj_lastAd200Date', state.lastAd200Date);
+    }
+    if (state.lastAdDate !== new Date().toDateString()) {
+        state.adsToday = 0; state.lastAdDate = new Date().toDateString();
+        localStorage.setItem('nj_adsToday', 0); localStorage.setItem('nj_lastAdDate', state.lastAdDate);
+    }
+
+    // ============================================================
+    // 3. FUNCIONES DE LISTA SEMANAL VIP Y ESCALAMIENTO
+    // ============================================================
+    function getWeekNumber(d) {
+        d = new Date(d); d.setHours(0,0,0,0);
+        d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+        var week1 = new Date(d.getFullYear(), 0, 4);
+        return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    }
+    function getWeeklyVIPList() {
+        const week = getWeekNumber(new Date());
+        const sorted = [...ALL_CHARACTERS_RAW].sort((a, b) => {
+            const hashA = (a.charCodeAt(0) || 0) + (a.charCodeAt(1) || 0) * 31 + week;
+            const hashB = (b.charCodeAt(0) || 0) + (b.charCodeAt(1) || 0) * 31 + week;
+            return hashA - hashB;
+        });
+        return sorted.slice(0, 10);
+    }
+    function getEffectiveLevel(charName) {
+        const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
+        if (vipActive && getWeeklyVIPList().includes(charName)) return 6;
+        return state.levels[charName] || 0;
+    }
+    function isCharacterUnlocked(charName) {
+        const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
+        if (vipActive && getWeeklyVIPList().includes(charName)) return true;
+        return state.chars[charName] || false;
+    }
+    function getSkillValue(charName) {
+        const cls = CHARACTER_CLASSES[charName] || 'common';
+        const level = Math.min(getEffectiveLevel(charName), 5);
+        switch(cls) {
+            case 'collector': return [0, 3, 6, 9, 12, 15][level] || 0;
+            case 'agile': return [0, 30, 60, 100, 150, 200][level] || 0;
+            case 'tank': return 1;
+            case 'competitive': return [0, 0.02, 0.05, 0.08, 0.12, 0.15][level] || 0;
+            case 'vip': return 1.4;
+            default: return 0;
+        }
+    }
+    function getUpgradeCost(charName, currentLevel) {
+        if (currentLevel >= 6) return null;
+        const nextLevel = currentLevel + 1;
+        if (nextLevel === 1) return { type: 'coins', amount: 500 };
+        else if (nextLevel === 2 || nextLevel === 3) return { type: 'diamonds', amount: 10 };
+        else if (nextLevel === 4) return { type: 'stars', amount: 5 };
+        else if (nextLevel === 5) return { type: 'stars', amount: 10 };
+        else if (nextLevel === 6) return { type: 'stars', amount: 30 };
+        return null;
+    }
+    function canUpgrade(charName) { return (state.levels[charName] || 0) < 6; }
+
+    // ============================================================
+    // 4. IMAGE LOADER
+    // ============================================================
+    const ImageLoader = {
+        images: {},
+        async loadAll() {
+            const paths = {
+                'jumper': 'assets/unlockables/jumper.png', 'nurse': 'assets/unlockables/nurse.png', 'oscar': 'assets/unlockables/oscar.png',
+                'painter': 'assets/unlockables/painter.png', 'pilot': 'assets/unlockables/pilot.png', 'pirate': 'assets/unlockables/pirate.png',
+                'police': 'assets/unlockables/police.png', 'ringmaster': 'assets/unlockables/ringmaster.png', 'sam': 'assets/unlockables/sam.png',
+                'samurai': 'assets/unlockables/samurai.png', 'snorkel': 'assets/unlockables/snorkel.png', 'soldier': 'assets/unlockables/soldier.png',
+                'stealth': 'assets/unlockables/stealth.png', 'tom': 'assets/unlockables/tom.png', 'toxic': 'assets/unlockables/toxic.png',
+                'viking': 'assets/unlockables/viking.png', 'worker': 'assets/unlockables/worker.png', 'adventuress': 'assets/unlockables/adventuress.png',
+                'adventurous': 'assets/unlockables/adventurous.png', 'ana': 'assets/unlockables/ana.png', 'archaeologist': 'assets/unlockables/archaeologist.png',
+                'astronaut': 'assets/unlockables/astronaut.png', 'boos': 'assets/unlockables/boos.png', 'boster': 'assets/unlockables/boster.png',
+                'boy': 'assets/unlockables/boy.png', 'caballero': 'assets/unlockables/caballero.png', 'chef': 'assets/unlockables/chef.png',
+                'christmas': 'assets/unlockables/christmas.png', 'clown': 'assets/unlockables/clown.png', 'cool': 'assets/unlockables/cool.png',
+                'cowboy': 'assets/unlockables/cowboy.png', 'cyber': 'assets/unlockables/cyber.png', 'devil': 'assets/unlockables/devil.png',
+                'disco': 'assets/unlockables/disco.png', 'ed': 'assets/unlockables/ed.png', 'firefighter': 'assets/unlockables/firefighter.png',
+                'gamer': 'assets/unlockables/gamer.png', 'genie': 'assets/unlockables/genie.png', 'goodboy': 'assets/unlockables/goodboy.png',
+                'jack': 'assets/unlockables/jack.png', 'jason': 'assets/unlockables/jason.png', 'jester': 'assets/unlockables/jester.png',
+                'juan': 'assets/unlockables/juan.png', 'kawaii': 'assets/unlockables/kawaii.png', 'king': 'assets/unlockables/king.png',
+                'konungr': 'assets/unlockables/konungr.png', 'larry': 'assets/unlockables/larry.png', 'lenny': 'assets/unlockables/lenny.png',
+                'lisa': 'assets/unlockables/lisa.png', 'magician': 'assets/unlockables/magician.png', 'mary': 'assets/unlockables/mary.png',
+                'mexican': 'assets/unlockables/mexican.png', 'michael': 'assets/unlockables/michael.png', 'monocle': 'assets/unlockables/monocle.png',
+                'musketeer': 'assets/unlockables/musketeer.png', 'normal': 'assets/platforms/normal.png', 'moving': 'assets/platforms/moving.png',
+                'fragile': 'assets/platforms/fragile.png', 'trap': 'assets/platforms/tramp.png', 'trap_active': 'assets/platforms/tramp_active.png',
+                'trap_active_2': 'assets/platforms/tramp_active_2.png', 'bronze': 'assets/chests/bronze.png', 'bronze_open': 'assets/chests/bronze_open.png',
+                'silver': 'assets/chests/silver.png', 'silver_open': 'assets/chests/silver_open.png', 'gold': 'assets/chests/gold.png',
+                'gold_open': 'assets/chests/gold_open.png', 'coin': 'assets/items/coin.png', 'diamond': 'assets/items/diamond.png',
+                'slime_cube': 'assets/enemies/slime_cube.png', 'drone_cube': 'assets/enemies/drone_cube.png', 'wizard_cube': 'assets/enemies/wizard_cube.png',
+                'lava_cube': 'assets/enemies/lava_cube.png', 'tech_cube': 'assets/enemies/tech_cube.png', 'shield': 'assets/powerups/shield.png',
+                'jetpack': 'assets/powerups/jetpack.png', 'magnet': 'assets/powerups/magnet.png', 'x2': 'assets/powerups/X2.png',
+                'spring': 'assets/powerups/spring.png', 'double_jump': 'assets/powerups/double_jump.png',
+                'wallpaper1': 'wallpaper/1.png', 'wallpaper2': 'wallpaper/2.png', 'wallpaper3': 'wallpaper/3.png', 'wallpaper4': 'wallpaper/4.png'
+            };
+            const promises = Object.entries(paths).map(([key, path]) => {
+                return new Promise((resolve) => {
+                    const timeout = setTimeout(() => resolve(), 800);
+                    const img = new Image();
+                    img.onload = () => { clearTimeout(timeout); this.images[key] = img; resolve(); };
+                    img.onerror = () => { clearTimeout(timeout); resolve(); };
+                    img.src = path;
+                });
+            });
+            await Promise.all(promises);
+        },
+        get(key) { return this.images[key] || null; }
+    };
+
+    function renderIcon(elId, imgKey, fallbackEmoji) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const img = imgKey ? ImageLoader.get(imgKey) : null;
+        if (img) {
+            el.innerHTML = `<img src="${img.src}" style="width:72px;height:72px;object-fit:contain;image-rendering:pixelated;">`;
+        } else {
+            el.textContent = fallbackEmoji || '🎁';
+        }
+    }
+
+    // ============================================================
+    // 5. POWERUPS
+    // ============================================================
+    const POWERUPS = [
+        { name: 'Escudo', key: 'shield' }, { name: 'Jetpack', key: 'jetpack' },
+        { name: 'Imán', key: 'magnet' }, { name: 'x2 Monedas', key: 'x2' },
+        { name: 'Resorte', key: 'spring' }, { name: 'Doble Salto', key: 'double_jump' }
+    ];
+
+    // Configuración de Niveles
+    const LEVEL_CONFIG = {
+        1: { name: 'Nivel 1', diff: 1.0, coins: 1.0, desc: 'Normal (x1.0)' },
+        2: { name: 'Nivel 2', diff: 1.2, coins: 1.2, desc: '+20% Dif. | +20% Monedas' },
+        3: { name: 'Nivel 3', diff: 1.25, coins: 1.35, desc: 'VIP: +25% Dif. | +35% Monedas' },
+        4: { name: 'Nivel 4', diff: 1.25, coins: 1.35, desc: 'VIP: +25% Dif. | +35% Monedas' }
+    };
+
+    // ============================================================
+    // 6. OBJETO GAME
+    // ============================================================
+    const game = {
+        canvas: document.getElementById('gameCanvas'),
+        ctx: null, running: false, score: 0, coins: 0, player: null,
+        platforms: [], coins_list: [], enemies: [], projectiles: [], particles: [],
+        camera: 0, keys: {}, difficulty: 1, animationId: null,
+        shieldActive: false, shieldTime: 0, shieldInterval: null, nextPlatformSafe: false,
+        activePowerups: {}, powerupTimers: {}, availablePowerups: [],
+        springActive: false, springTimer: null, doubleJumpActive: false,
+        magnetActive: false, x2Active: false,
+        _magnetDuration: 0, _boostDistance: 0, _scoreMultiplier: 1.0,
+        _tankShield: false, _vipRevive: false, _vipPassActive: false,
+        _agileBoost: false, _vipX2: false, _extraLife: false, _extraLifeUsed: false,
+        _passiveShieldUsed: false, _vipReviveUsed: false,
+        levelConfig: LEVEL_CONFIG[1],
+        
+        init() {
+            this.ctx = this.canvas.getContext('2d');
+            this.resize();
+            window.addEventListener('resize', () => this.resize());
+            this.setupControls();
+            this.setupGyroscope();
+            this.applyLanguage();
+        },
+        resize() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+        },
+        setupControls() {
+            window.addEventListener('keydown', (e) => { this.keys[e.key] = true; });
+            window.addEventListener('keyup', (e) => { this.keys[e.key] = false; });
+            let touchStartX = 0;
+            this.canvas.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: false });
+            this.canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const touchX = e.touches[0].clientX;
+                if (this.player) {
+                    const diff = touchX - (this.player.x + this.player.w / 2);
+                    this.player.vx += diff * 0.015;
+                    if (diff > 5) this.player.facing = 1;
+                    else if (diff < -5) this.player.facing = -1;
+                }
+            }, { passive: false });
+        },
+        setupGyroscope() {
+            if (window.DeviceOrientationEvent && (window.innerWidth < 768 || 'ontouchstart' in window)) {
+                window.addEventListener('deviceorientation', (e) => {
+                    if (!this.running || !this.player) return;
+                    const gamma = e.gamma || 0;
+                    const targetVx = gamma * 0.12;
+                    this.player.vx += (targetVx - this.player.vx) * 0.25;
+                    const maxVx = 8;
+                    this.player.vx = Math.max(-maxVx, Math.min(maxVx, this.player.vx));
+                    if (gamma > 5) this.player.facing = 1;
+                    else if (gamma < -5) this.player.facing = -1;
+                }, { passive: true });
+            }
+        },
+        applyLanguage() {
+            document.getElementById('btnPlay').textContent = t('btnPlay');
+            document.getElementById('btnShop').textContent = t('btnShop');
+            document.getElementById('btnChars').textContent = t('btnChars');
+            document.getElementById('btnWall').textContent = t('btnWall');
+            document.getElementById('btnEarn').textContent = t('btnEarn');
+            document.getElementById('btnPass').textContent = t('btnPass');
+            document.getElementById('shopTitle').textContent = t('shopTitle');
+            document.getElementById('shopBack').textContent = t('shopBack');
+            document.getElementById('charsTitle').textContent = t('charsTitle');
+            document.getElementById('charsBack').textContent = t('charsBack');
+            document.getElementById('wallTitle').textContent = t('wallTitle');
+            document.getElementById('wallSub').textContent = t('wallSub');
+            document.getElementById('wallBack').textContent = t('wallBack');
+            document.getElementById('passTitle').textContent = t('passTitle');
+            document.getElementById('passPrice').textContent = t('passPrice');
+            document.getElementById('passBuy').textContent = t('passBuy');
+            document.getElementById('passBack').textContent = t('passBack');
+            document.getElementById('earnTitle').textContent = t('earnTitle');
+            document.getElementById('earnAdTitle').textContent = t('earnAdTitle');
+            document.getElementById('earnAdDesc').textContent = t('earnAdDesc');
+            document.getElementById('earnRefTitle').textContent = t('earnRefTitle');
+            document.getElementById('earnRefDesc').textContent = t('earnRefDesc');
+            document.getElementById('earnBack').textContent = t('earnBack');
+            document.getElementById('btnAd200').textContent = t('btnAd200');
+            document.getElementById('btnShareRef').textContent = t('btnShareRef');
+            document.getElementById('adCounter').innerHTML = t('adCounter');
+            document.getElementById('refStatus').innerHTML = t('refStatus');
+            document.getElementById('passDesc').innerHTML = (LANG[currentLang].passDesc || LANG.es.passDesc).map(d => `<div>${d}</div>`).join('');
+            document.getElementById('btnRevive').textContent = t('reviveBtn');
+        },
+        
+        start() {
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            
+            const charName = state.selected;
+            const cls = CHARACTER_CLASSES[charName] || 'common';
+            const level = getEffectiveLevel(charName);
+            
+            this.levelConfig = LEVEL_CONFIG[state.wallpaper] || LEVEL_CONFIG[1];
+            
+            const magnetDurations = [0, 3, 6, 9, 12, 15];
+            this._magnetDuration = (cls === 'collector') ? magnetDurations[Math.min(level, 5)] : 0;
+            const boostDistances = [0, 30, 60, 100, 150, 200];
+            this._boostDistance = (cls === 'agile') ? boostDistances[Math.min(level, 5)] : 0;
+            const multipliers = [1.0, 1.02, 1.05, 1.08, 1.12, 1.15];
+            this._scoreMultiplier = (cls === 'competitive') ? multipliers[Math.min(level, 5)] : 1.0;
+            this._tankShield = (cls === 'tank') && level >= 1;
+            this._vipRevive = (cls === 'vip') && level >= 1;
+            this._extraLife = (level === 6);
+            this._extraLifeUsed = false;
+            
+            this._vipPassActive = (state.vipPass.active && state.vipPass.expiry > Date.now());
+            this._vipX2 = this._vipPassActive;
+            
+            this.running = true; this.score = 0; this.coins = 0; this.camera = 0; this.difficulty = 1;
+            this.platforms = []; this.coins_list = []; this.enemies = []; this.projectiles = []; this.particles = [];
+            this.shieldActive = false; this.shieldTime = 0; this.nextPlatformSafe = false;
+            this.activePowerups = {}; this.powerupTimers = {};
+            this.availablePowerups = [...state.inventory];
+            state.adsUsedInGame = 0;
+            if (this.shieldInterval) clearInterval(this.shieldInterval);
+            this.springActive = false; this.doubleJumpActive = false; this.magnetActive = false; this.x2Active = false;
+            if (this.springTimer) clearTimeout(this.springTimer);
+            
+            this.player = {
+                x: this.canvas.width / 2 - 20, y: this.canvas.height - 150,
+                w: 40, h: 40, vx: 0, vy: -12, gravity: 0.35, jumpPower: -12, facing: 1,
+                doubleJump: false, jumpCount: 0
+            };
+            
+            this.platforms.push({ x: 0, y: this.canvas.height - 50, w: this.canvas.width, h: 20, type: 'normal' });
+            const numInitial = Math.ceil(this.canvas.height / 80) + 10;
+            for (let i = 0; i < numInitial; i++) this.generatePlatform();
+            
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('hud').classList.add('active');
+            document.getElementById('shieldIndicator').classList.remove('active');
+            
+            this.updatePowerupBar();
+            this.loop();
+        },
+        
+        generatePlatform() {
+            const validPlatforms = this.platforms.filter(pl => !pl.falling);
+            if (validPlatforms.length === 0) return;
+            const highestPlat = validPlatforms.reduce((prev, curr) => prev.y < curr.y ? prev : curr);
+            
+            const difficultyFactor = Math.min(1, this.score / 2000);
+            const baseGap = Math.max(60, this.canvas.height * 0.08);
+            const verticalGap = baseGap + Math.random() * 30 + (difficultyFactor * 15);
+            const newY = highestPlat.y - verticalGap;
+            
+            let type = 'normal', safeJump = false;
+            if (this.nextPlatformSafe) {
+                type = 'normal'; safeJump = true; this.nextPlatformSafe = false;
+            } else {
+                const rand = Math.random();
+                const trapChance = 0.02 + (difficultyFactor * 0.08);
+                const fragileChance = trapChance + 0.08 + (difficultyFactor * 0.12);
+                const movingChance = fragileChance + 0.15 + (difficultyFactor * 0.20);
+                if (rand > movingChance) type = 'moving';
+                else if (rand > fragileChance) type = 'fragile';
+                else if (rand > trapChance) { type = 'trap'; this.nextPlatformSafe = true; }
+            }
+            
+            const maxJumpX = Math.min(150, this.canvas.width * 0.35);
+            const margin = Math.max(30, this.canvas.width * 0.05);
+            const centerX = highestPlat.x + highestPlat.w / 2;
+            const minX = Math.max(margin, centerX - maxJumpX);
+            const maxX = Math.min(this.canvas.width - margin - 60, centerX + maxJumpX);
+            
+            let w = safeJump ? Math.min(100, this.canvas.width * 0.25) : (type === 'moving' ? 80 + Math.random() * 60 : 60 + Math.random() * 40);
+            const x = Math.random() * (maxX - minX) + minX;
+            
+            this.platforms.push({
+                x, y: newY, w, h: 18, type,
+                vx: type === 'moving' ? (Math.random() > 0.5 ? 2 : -2) : 0,
+                originX: x, moveRange: Math.min(50, this.canvas.width * 0.1),
+                standTime: 0, falling: false,
+                hasSpikes: type === 'trap' && Math.random() > 0.5,
+                spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
+            });
+            
+            if (Math.random() < 0.3 && type !== 'trap') {
+                this.coins_list.push({ x: x + w/2 - 10, y: newY - 35, w: 20, h: 20, collected: false, floatOffset: Math.random() * Math.PI * 2 });
+            }
+            
+            // LÓGICA DE GENERACIÓN DE ENEMIGOS MEJORADA CON MULTIPLICADOR DE NIVEL
+            if (this.score > 60) {
+                const diffMult = this.levelConfig.diff;
+                const spawnChance = (0.30 + (this.difficulty * 0.15)) * diffMult;
+                if (Math.random() < spawnChance) {
+                    const maxEnemies = Math.floor(3 + this.difficulty * 0.8);
+                    if (this.enemies.length < maxEnemies) {
+                        let count = 1;
+                        if (this.score >= 500 && Math.random() < 0.6) count = 2;
+                        if (this.score >= 800 && Math.random() < 0.4) count = 3;
+                        
+                        for (let i = 0; i < count; i++) {
+                            if (this.enemies.length >= maxEnemies) break;
+                            let types = [];
+                            if (this.score >= 60) types.push({id: 'slime_cube', w: 50});
+                            if (this.score >= 120) types.push({id: 'drone_cube', w: 35});
+                            if (this.score >= 250) types.push({id: 'wizard_cube', w: 25});
+                            if (this.score >= 350) types.push({id: 'lava_cube', w: 20});
+                            if (this.score >= 500) types.push({id: 'tech_cube', w: 15});
+
+                            const totalWeight = types.reduce((sum, t) => sum + t.w, 0);
+                            let rand = Math.random() * totalWeight;
+                            let chosen = 'slime_cube';
+                            for (let t of types) { rand -= t.w; if (rand <= 0) { chosen = t.id; break; } }
+
+                            this.enemies.push({
+                                x: Math.random() * (this.canvas.width - 60) + 30,
+                                y: newY - 150 - (Math.random() * 100),
+                                w: 40, h: 40, type: chosen,
+                                vx: (Math.random() > 0.5 ? 1.2 : -1.2) * (1 + this.difficulty * 0.3),
+                                angle: 0,
+                                shootTimer: (40 + Math.random() * 60) / diffMult, // Más agresivo en niveles altos
+                                shootState: 0
+                            });
+                        }
+                    }
+                }
+            }
+        },
+        
+        updatePowerupBar() {
+            const bar = document.getElementById('powerupBar');
+            bar.innerHTML = '';
+            if (this.availablePowerups.length === 0 || !this.running) { bar.classList.remove('active'); return; }
+            bar.classList.add('active');
+            this.availablePowerups.forEach((key, index) => {
+                const item = document.createElement('div');
+                item.className = 'powerup-item';
+                const img = ImageLoader.get(key);
+                if (img) { const imgEl = document.createElement('img'); imgEl.src = img.src; item.appendChild(imgEl); }
+                else { item.textContent = '?'; }
+                const badge = document.createElement('span'); badge.className = 'badge'; badge.textContent = index + 1;
+                item.appendChild(badge);
+                item.onclick = () => this.activatePowerup(key);
+                bar.appendChild(item);
+            });
+        },
+        
+        activatePowerup(key) {
+            if (!this.running || this.activePowerups[key]) return;
+            const idx = this.availablePowerups.indexOf(key);
+            if (idx === -1) return;
+            this.availablePowerups.splice(idx, 1);
+            this.activePowerups[key] = true;
+            
+            switch(key) {
+                case 'shield': this.activateShield(); break;
+                case 'jetpack':
+                    this.player.vy = -15; this.score += 100;
+                    this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h, '#ff8800', 20);
+                    break;
+                case 'magnet':
+                    this.magnetActive = true;
+                    setTimeout(() => { this.magnetActive = false; }, (this._magnetDuration > 0 ? this._magnetDuration : 8) * 1000);
+                    break;
+                case 'x2':
+                    this.x2Active = true;
+                    setTimeout(() => { this.x2Active = false; }, 10000);
+                    break;
+                case 'spring':
+                    this.springActive = true;
+                    if (this.springTimer) clearTimeout(this.springTimer);
+                    this.springTimer = setTimeout(() => { this.springActive = false; }, 15000);
+                    break;
+                case 'double_jump':
+                    this.player.doubleJump = true; this.player.jumpCount = 0;
+                    setTimeout(() => { this.player.doubleJump = false; }, 15000);
+                    break;
+            }
+            this.updatePowerupBar();
+            state.inventory = this.availablePowerups;
+            localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
+        },
+        
+        activateShield() {
+            this.shieldActive = true; this.shieldTime = 30;
+            document.getElementById('shieldIndicator').classList.add('active');
+            document.getElementById('shieldTime').textContent = this.shieldTime;
+            if (this.shieldInterval) clearInterval(this.shieldInterval);
+            this.shieldInterval = setInterval(() => {
+                this.shieldTime--;
+                document.getElementById('shieldTime').textContent = this.shieldTime;
+                if (this.shieldTime <= 0) {
+                    this.shieldActive = false; clearInterval(this.shieldInterval);
+                    document.getElementById('shieldIndicator').classList.remove('active');
+                }
+            }, 1000);
+        },
+        
+        enemyShoot(enemy) {
+            const p = this.player;
+            const mult = 1 + (this.difficulty * 0.2);
+            const centerX = enemy.x + enemy.w / 2, centerY = enemy.y + enemy.h / 2;
+            const playerX = p.x + p.w / 2, playerY = p.y + p.h / 2;
+            
+            const createProj = (vx, vy, color, size, isCurve = false, curveDir = 0) => {
+                this.projectiles.push({ x: centerX - 8, y: centerY - 8, w: 16, h: 16, life: 1.0, vx, vy, color, size, trail: true, curve: isCurve, curveDir });
+            };
+
+            switch (enemy.type) {
+                case 'slime_cube':
+                    const dx1 = playerX - centerX, dy1 = playerY - centerY, dist1 = Math.sqrt(dx1*dx1 + dy1*dy1) || 1;
+                    createProj((dx1 / dist1) * 3 * mult, (dy1 / dist1) * 3 * mult, '#00ff00', 12);
+                    enemy.shootTimer = (80 + Math.random() * 60) / this.levelConfig.diff;
+                    break;
+                case 'drone_cube':
+                    const dx2 = playerX - centerX, dy2 = playerY - centerY, dist2 = Math.sqrt(dx2*dx2 + dy2*dy2) || 1;
+                    const baseAngle = Math.atan2(dy2, dx2), speed2 = 4.5 * mult;
+                    createProj(Math.cos(baseAngle) * speed2, Math.sin(baseAngle) * speed2, '#ff0000', 10);
+                    createProj(Math.cos(baseAngle - 0.45) * speed2, Math.sin(baseAngle - 0.45) * speed2, '#ff0000', 10);
+                    createProj(Math.cos(baseAngle + 0.45) * speed2, Math.sin(baseAngle + 0.45) * speed2, '#ff0000', 10);
+                    enemy.shootTimer = (100 + Math.random() * 80) / this.levelConfig.diff;
+                    break;
+                case 'wizard_cube':
+                    const dx3 = playerX - centerX, dy3 = playerY - centerY, dist3 = Math.sqrt(dx3*dx3 + dy3*dy3) || 1;
+                    createProj((dx3 / dist3) * 3.5 * mult, (dy3 / dist3) * 3.5 * mult, '#ff00ff', 14, true, (playerX > centerX) ? 0.15 : -0.15);
+                    enemy.shootTimer = (90 + Math.random() * 70) / this.levelConfig.diff;
+                    break;
+                case 'lava_cube':
+                    const speed4 = 4.0 * mult;
+                    createProj(0, speed4, '#ff6600', 16);
+                    createProj(-1.5 * mult, speed4, '#ff6600', 14);
+                    createProj(1.5 * mult, speed4, '#ff6600', 14);
+                    enemy.shootTimer = (110 + Math.random() * 90) / this.levelConfig.diff;
+                    break;
+                case 'tech_cube':
+                    const dx5 = playerX - centerX, dy5 = playerY - centerY, dist5 = Math.sqrt(dx5*dx5 + dy5*dy5) || 1;
+                    createProj((dx5 / dist5) * 6.0 * mult, (dy5 / dist5) * 6.0 * mult, '#00ffff', 10);
+                    if (enemy.shootState === 0) { enemy.shootState = 1; enemy.shootTimer = 15 / this.levelConfig.diff; }
+                    else if (enemy.shootState === 1) { enemy.shootState = 2; enemy.shootTimer = 15 / this.levelConfig.diff; }
+                    else { enemy.shootState = 0; enemy.shootTimer = (120 + Math.random() * 60) / this.levelConfig.diff; }
+                    break;
+            }
+        },
+        
+        explode() {
+            if (navigator.vibrate) navigator.vibrate(200);
+            if (this._tankShield && !this._passiveShieldUsed) {
+                this._passiveShieldUsed = true;
+                this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h/2, '#00ffff', 20);
+                return;
+            }
+            if (this._vipPassActive && !this.shieldActive) { this.activateShield(); return; }
+            if (this._vipRevive && !this._vipReviveUsed) {
+                this._vipReviveUsed = true; this.running = true; this.player.vy = -10; this.player.y = this.canvas.height - 150;
+                this.activateShield(); setTimeout(() => { this.shieldActive = false; }, 5000);
+                return;
+            }
+            if (this._extraLife && !this._extraLifeUsed) {
+                this._extraLifeUsed = true; this.running = true; this.player.vy = -8; this.player.y = this.canvas.height - 100;
+                this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h/2, '#ff00ff', 30);
+                return;
+            }
+            if (!this.running) return;
+            const p = this.player;
+            const flash = document.getElementById('flash');
+            flash.classList.add('active'); setTimeout(() => flash.classList.remove('active'), 200);
+            this.canvas.classList.add('canvas-shake'); setTimeout(() => this.canvas.classList.remove('canvas-shake'), 500);
+            
+            let charColor = '#00ff00';
+            const img = ImageLoader.get(state.selected);
+            if (img) {
+                const tempCanvas = document.createElement('canvas'); tempCanvas.width = img.width; tempCanvas.height = img.height;
+                const tempCtx = tempCanvas.getContext('2d'); tempCtx.drawImage(img, 0, 0);
+                try {
+                    const data = tempCtx.getImageData(0, 0, img.width, img.height).data;
+                    let r = 0, g = 0, b = 0, count = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i+3] > 128) { r += data[i]; g += data[i+1]; b += data[i+2]; count++; }
+                    }
+                    if (count > 0) charColor = `rgb(${Math.round(r/count)},${Math.round(g/count)},${Math.round(b/count)})`;
+                } catch(e) {}
+            }
+            
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2, speed = 2 + Math.random() * 6, size = 4 + Math.random() * 8;
+                this.particles.push({ x: p.x + p.w/2 + (Math.random() - 0.5) * 15, y: p.y + p.h/2 + (Math.random() - 0.5) * 15,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 1, life: 0.8 + Math.random() * 0.6,
+                    color: i % 3 === 0 ? '#ffffff' : charColor, size, rotation: Math.random() * Math.PI * 2, rotSpeed: (Math.random() - 0.5) * 0.2 });
+            }
+            setTimeout(() => { this.end(); }, 800);
+            this.running = false;
+        },
+        
+        createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                this.particles.push({ x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6, life: 0.8, color, size: 3 + Math.random() * 3 });
+            }
+        },
+        
+        update() {
+            if (!this.running) return;
+            const p = this.player;
+            this.difficulty = 1 + Math.floor(this.score / 300);
+            p.gravity = Math.min(0.55, 0.35 + (this.score / 10000));
+            
+            if (this.keys['ArrowLeft'] || this.keys['a']) { p.vx -= 1.2; p.facing = -1; }
+            if (this.keys['ArrowRight'] || this.keys['d']) { p.vx += 1.2; p.facing = 1; }
+            
+            p.vx *= 0.88; p.vx = Math.max(-8, Math.min(8, p.vx));
+            p.x += p.vx;
+            if (p.x + p.w < 0) p.x = this.canvas.width;
+            if (p.x > this.canvas.width) p.x = -p.w;
+            
+            if (p.doubleJump && p.jumpCount < 2 && (this.keys['ArrowUp'] || this.keys['w'] || this.keys[' '])) {
+                if (p.vy > -2) { p.vy = -10; p.jumpCount++; }
+            }
+            if (this.springActive && (this.keys['ArrowUp'] || this.keys['w'] || this.keys[' ']) && p.vy > -2 && p.jumpCount === 0) {
+                p.vy = -18;
+            }
+            p.vy += p.gravity; p.y += p.vy;
+            
+            if (this._boostDistance > 0 && this.score === 0 && this.running) { this.score = this._boostDistance; this._agileBoost = false; }
+            if (this.magnetActive) {
+                this.coins_list.forEach(c => {
+                    if (!c.collected) {
+                        const dx = (p.x + p.w/2) - (c.x + 10), dy = (p.y + p.h/2) - (c.y + 10);
+                        if (Math.sqrt(dx*dx + dy*dy) < 200) { c.x += dx * 0.08; c.y += dy * 0.08; }
+                    }
+                });
+            }
+            
+            if (p.y < this.canvas.height / 2) {
+                const diff = (this.canvas.height / 2) - p.y;
+                p.y = this.canvas.height / 2; this.score += Math.floor(diff / 10); this.camera += diff;
+                this.platforms.forEach(pl => pl.y += diff); this.coins_list.forEach(c => c.y += diff);
+                this.enemies.forEach(en => en.y += diff); this.projectiles.forEach(pr => pr.y += diff);
+                this.particles.forEach(pa => pa.y += diff);
+                const highest = Math.min(...this.platforms.filter(pl => !pl.falling).map(pl => pl.y));
+                if (highest > -100) this.generatePlatform();
+            }
+            
+            this.platforms = this.platforms.filter(pl => pl.y < this.canvas.height + 100 && !pl.falling);
+            this.coins_list = this.coins_list.filter(c => c.y < this.canvas.height + 100 && !c.collected);
+            this.enemies = this.enemies.filter(en => en.y < this.canvas.height + 100);
+            this.projectiles = this.projectiles.filter(pr => pr.y < this.canvas.height + 100 && pr.y > -200 && pr.life > 0);
+            this.particles = this.particles.filter(pa => pa.life > 0);
+            
+            if (p.vy > 0) {
+                this.platforms.forEach(pl => {
+                    if (pl.falling) return;
+                    if (p.x + p.w > pl.x && p.x < pl.x + pl.w && p.y + p.h >= pl.y && p.y + p.h <= pl.y + pl.h + p.vy + 8) {
+                        if (pl.type === 'trap') {
+                            if (pl.hasSpikes && pl.spikeState === 2) {
+                                if (!this.shieldActive) this.explode();
+                                else { p.y = pl.y - p.h; p.vy = p.jumpPower * 0.85; }
+                            } else {
+                                p.y = pl.y - p.h; p.vy = this.springActive ? -18 : p.jumpPower * 0.85;
+                                this.createParticles(p.x + p.w/2, p.y + p.h, '#ff6600', 6);
+                            }
+                            pl.standTime += 1/60;
+                            if (pl.standTime > 0.8) pl.warning = true;
+                            if (pl.standTime > 1.2) { pl.falling = true; pl.vy = 5; }
+                        } else if (pl.type === 'fragile') {
+                            pl.falling = true; p.y = pl.y - p.h; p.vy = this.springActive ? -18 : p.jumpPower * 0.75;
+                            this.createParticles(p.x + p.w/2, p.y + p.h, '#ff4444', 8);
+                        } else {
+                            p.y = pl.y - p.h; p.vy = this.springActive ? -18 : p.jumpPower;
+                            this.createParticles(p.x + p.w/2, p.y + p.h, '#00ff00', 6);
+                        }
+                    }
+                });
+            }
+            
+            this.platforms.forEach(pl => {
+                if (pl.type === 'moving' && !pl.falling) {
+                    pl.x += pl.vx;
+                    if (pl.x <= pl.originX - pl.moveRange || pl.x + pl.w >= pl.originX + pl.w + pl.moveRange) pl.vx *= -1;
+                }
+                if (pl.type === 'trap' && !pl.falling && pl.hasSpikes) {
+                    pl.spikeTimer += 1/60;
+                    if (pl.spikeState === 0 && pl.spikeTimer > 0.8) { pl.spikeState = 1; pl.spikeTimer = 0; }
+                    else if (pl.spikeState === 1) {
+                        pl.blinkOn = Math.floor(pl.spikeTimer / 0.12) % 2 === 0;
+                        if (pl.spikeTimer > 0.4) { pl.spikeState = 2; pl.spikeTimer = 0; }
+                    } else if (pl.spikeState === 2) {
+                        pl.animFrame = Math.floor(pl.spikeTimer / 0.15) % 2;
+                        if (pl.spikeTimer > 0.6) { pl.spikeState = 0; pl.spikeTimer = 0; }
+                    }
+                }
+                if (pl.falling) { pl.y += pl.vy; pl.vy += 0.3; }
+            });
+            
+            this.coins_list.forEach(c => {
+                c.floatOffset += 0.05;
+                const floatY = Math.sin(c.floatOffset) * 4;
+                if (!c.collected && p.x < c.x + c.w && p.x + p.w > c.x && p.y < c.y + c.h + floatY && p.y + p.h > c.y + floatY) {
+                    c.collected = true;
+                    let bonus = this.x2Active ? 2 : 1;
+                    if (this._vipX2) bonus *= 2;
+                    this.coins += bonus;
+                    this.createParticles(c.x + 10, c.y + 10, '#ffd700', 8);
+                }
+            });
+            
+            this.enemies.forEach(en => {
+                en.x += en.vx; en.angle += 0.1;
+                if (en.x <= 10 || en.x + en.w >= this.canvas.width - 10) en.vx *= -1;
+                en.shootTimer--;
+                if (en.shootTimer <= 0) this.enemyShoot(en);
+                if (p.x < en.x + en.w && p.x + p.w > en.x && p.y < en.y + en.h && p.y + p.h > en.y) {
+                    if (!this.shieldActive) this.explode();
+                }
+            });
+            
+            this.projectiles.forEach(pr => {
+                pr.x += pr.vx; pr.y += pr.vy; pr.life -= 0.008;
+                if (pr.curve) pr.vx += pr.curveDir * 0.08;
+                if (p.x < pr.x + pr.w && p.x + p.w > pr.x && p.y < pr.y + pr.h && p.y + p.h > pr.y) {
+                    if (!this.shieldActive) this.explode();
+                }
+            });
+            
+            this.particles.forEach(pa => {
+                pa.x += pa.vx; pa.y += pa.vy; pa.vy += 0.2; pa.life -= 0.04; pa.size *= 0.95;
+                if (pa.rotation !== undefined) pa.rotation += pa.rotSpeed || 0;
+            });
+            
+            if (p.y > this.canvas.height) this.end();
+            document.getElementById('hudScore').textContent = this.score;
+            document.getElementById('hudCoins').textContent = this.coins;
+        },
+        
+        draw() {
+            const ctx = this.ctx, w = this.canvas.width, h = this.canvas.height;
+            const wpNum = state.wallpaper || 1;
+            const img = ImageLoader.get('wallpaper' + wpNum);
+            if (img && img.complete && img.naturalWidth > 0) {
+                ctx.drawImage(img, 0, 0, w, h);
+                ctx.globalAlpha = 0.60; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); ctx.globalAlpha = 1.0;
+            } else {
+                ctx.fillStyle = '#111'; ctx.fillRect(0, 0, w, h);
+            }
+            
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)'; ctx.lineWidth = 1;
+            const grid = 40, offset = this.camera % grid;
+            for (let x = 0; x < w; x += grid) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+            for (let y = -grid; y < h; y += grid) { ctx.beginPath(); ctx.moveTo(0, y + offset); ctx.lineTo(w, y + offset); ctx.stroke(); }
+            
+            this.coins_list.forEach(c => {
+                if (c.collected) return;
+                const floatY = Math.sin(c.floatOffset) * 4;
+                const cImg = ImageLoader.get('coin');
+                if (cImg) { ctx.save(); ctx.translate(c.x + 10, c.y + 10 + floatY); ctx.rotate(Math.sin(c.floatOffset * 2) * 0.3); ctx.drawImage(cImg, -10, -10, 20, 20); ctx.restore(); }
+                else { ctx.fillStyle = '#ffd700'; ctx.fillRect(c.x + 2, c.y + 2 + floatY, 16, 16); }
+            });
+            
+            this.platforms.forEach(pl => {
+                if (pl.falling) return;
+                let imgPl, alpha = 1;
+                if (pl.type === 'trap') {
+                    ctx.shadowColor = 'rgba(255, 0, 0, 0.6)'; ctx.shadowBlur = 8;
+                    if (pl.hasSpikes) {
+                        if (pl.spikeState === 2) imgPl = pl.animFrame === 0 ? ImageLoader.get('trap_active') : ImageLoader.get('trap_active_2');
+                        else if (pl.spikeState === 1) imgPl = pl.blinkOn ? ImageLoader.get('trap_active_2') : ImageLoader.get('trap');
+                        else imgPl = ImageLoader.get('trap');
+                    } else {
+                        imgPl = ImageLoader.get('trap');
+                        if (pl.warning) alpha = (Math.floor(pl.standTime * 8) % 2 === 0) ? 1 : 0.5;
+                    }
+                } else {
+                    ctx.shadowColor = 'rgba(0, 255, 0, 0.6)'; ctx.shadowBlur = 8;
+                    imgPl = ImageLoader.get(pl.type);
+                }
+                ctx.globalAlpha = alpha;
+                if (imgPl) ctx.drawImage(imgPl, pl.x, pl.y, pl.w, pl.h);
+                else {
+                    ctx.fillStyle = pl.type === 'moving' ? '#0088ff' : pl.type === 'fragile' ? '#ff4444' : pl.type === 'trap' ? (pl.spikeState === 2 ? '#ff0044' : pl.warning ? '#ff6600' : '#884400') : '#00ff00';
+                    ctx.fillRect(pl.x, pl.y, pl.w, pl.h);
+                }
+                ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+            });
+            
+            ctx.shadowColor = 'rgba(255, 0, 0, 0.6)'; ctx.shadowBlur = 8;
+            this.enemies.forEach(en => {
+                const eImg = ImageLoader.get(en.type);
+                if (eImg) { ctx.save(); ctx.translate(en.x + en.w/2, en.y + en.h/2); if (en.type === 'drone_cube') ctx.rotate(en.angle); ctx.drawImage(eImg, -en.w/2, -en.h/2, en.w, en.h); ctx.restore(); }
+                else { ctx.fillStyle = '#ff0000'; ctx.fillRect(en.x, en.y, en.w, en.h); }
+            });
+            ctx.shadowBlur = 0;
+            
+            ctx.shadowColor = 'rgba(255, 255, 0, 0.6)'; ctx.shadowBlur = 8;
+            this.projectiles.forEach(pr => {
+                ctx.globalAlpha = pr.life;
+                if (pr.trail) { ctx.fillStyle = pr.color; ctx.fillRect(pr.x + pr.w/2 - pr.vx, pr.y + pr.h/2 - pr.vy, pr.size, pr.size); }
+                ctx.fillStyle = pr.color; ctx.fillRect(pr.x, pr.y, pr.w, pr.h);
+                ctx.globalAlpha = 1;
+            });
+            ctx.shadowBlur = 0;
+            
+            this.particles.forEach(pa => {
+                ctx.save(); ctx.translate(pa.x, pa.y);
+                if (pa.rotation !== undefined) ctx.rotate(pa.rotation);
+                ctx.fillStyle = pa.color; ctx.globalAlpha = pa.life;
+                ctx.fillRect(-pa.size/2, -pa.size/2, pa.size, pa.size);
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1;
+            
+            if (this.running) {
+                const p = this.player;
+                const pImg = ImageLoader.get(state.selected);
+                ctx.save(); ctx.translate(p.x + p.w/2, p.y + p.h/2);
+                ctx.shadowColor = 'rgba(0, 255, 255, 0.8)'; ctx.shadowBlur = 18;
+                let scaleX = 1, scaleY = 1;
+                if (p.vy < -2) { scaleX = 0.8; scaleY = 1.2; }
+                else if (p.vy > 2) { scaleX = 1.15; scaleY = 0.85; }
+                if (p.facing === -1) ctx.scale(-scaleX, scaleY);
+                else ctx.scale(scaleX, scaleY);
+                if (pImg) ctx.drawImage(pImg, -p.w/2, -p.h/2, p.w, p.h);
+                else { ctx.fillStyle = this.shieldActive ? '#00ffff' : '#00ff00'; ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); }
+                if (this.shieldActive) {
+                    ctx.shadowBlur = 0; ctx.strokeStyle = '#00ffff'; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+                    ctx.beginPath(); ctx.arc(0, 0, p.w/2 + 4, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+                }
+                ctx.restore(); ctx.shadowBlur = 0;
+            }
+        },
+        
+        loop() {
+            if (this.running || this.particles.length > 0) {
+                this.update(); this.draw();
+                this.animationId = requestAnimationFrame(() => this.loop());
+            }
+        },
+        
+        end() {
+            this.running = false;
+            let finalScore = this.score;
+            if (this._scoreMultiplier > 1.0) finalScore = Math.floor(finalScore * this._scoreMultiplier);
+            
+            state.ranking.push({ player: 'Jugador', score: finalScore, date: new Date().toISOString() });
+            state.ranking.sort((a,b) => b.score - a.score);
+            if (state.ranking.length > 100) state.ranking = state.ranking.slice(0,100);
+            localStorage.setItem('nj_ranking', JSON.stringify(state.ranking));
+
+            // APLICAR MULTIPLICADOR DE MONEDAS DEL NIVEL
+            const coinMult = this.levelConfig.coins;
+            const earned = Math.floor(this.coins * coinMult);
+            
+            state.coins += earned; state.games++;
+            if (finalScore > state.best) state.best = finalScore;
+            this.save();
+            
+            document.getElementById('hud').classList.remove('active');
+            document.getElementById('shieldIndicator').classList.remove('active');
+            document.getElementById('powerupBar').classList.remove('active');
+            document.getElementById('finalScore').textContent = finalScore;
+            document.getElementById('earnedCoins').textContent = earned;
+            
+            const revivesLeft = 5 - state.adsToday;
+            document.getElementById('revivesLeft').textContent = revivesLeft;
+            document.getElementById('btnRevive').disabled = revivesLeft <= 0;
+            document.getElementById('btnRevive').textContent = t('reviveBtn');
+            document.getElementById('gameOverScreen').classList.add('active');
+            document.querySelector('#gameOverScreen .btn:not(#btnRevive)').textContent = t('retryBtn');
+            document.querySelector('#gameOverScreen .btn-secondary').textContent = t('menuBtn');
+        },
+        
+        reviveWithAd() {
+            if (state.adsToday >= 5) { alert('Limite de 5 anuncios diarios alcanzado.'); return; }
+            if (state.adsUsedInGame >= 1) { alert('Solo 1 revive por partida.'); return; }
+            state.adsToday++; state.adsUsedInGame++;
+            localStorage.setItem('nj_adsToday', state.adsToday);
+            this.save();
+            document.getElementById('gameOverScreen').classList.remove('active');
+            this.activateShield(); this.start();
+        },
+        
+        watchAd200() {
+            if (state.ads200Today >= 3) { alert(currentLang === 'es' ? 'Ya usaste tus 3 anuncios de 200 hoy.' : 'You have used your 3 ads of 200 today.'); return; }
+            state.ads200Today++; state.coins += 200;
+            localStorage.setItem('nj_ads200Today', state.ads200Today);
+            this.save(); ui.updateCurrency(); ui.updateEarnUI();
+            alert(currentLang === 'es' ? '¡+200 monedas!' : '+200 coins!');
+        },
+        
+        save() {
+            localStorage.setItem('nj_coins', state.coins);
+            localStorage.setItem('nj_diamonds', state.diamonds);
+            localStorage.setItem('nj_stars', state.stars || 0);
+            localStorage.setItem('nj_chars', JSON.stringify(state.chars));
+            localStorage.setItem('nj_selected', state.selected);
+            localStorage.setItem('nj_games', state.games);
+            localStorage.setItem('nj_best', state.best);
+            localStorage.setItem('nj_adsToday', state.adsToday);
+            localStorage.setItem('nj_lastAdDate', state.lastAdDate);
+            localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
+            localStorage.setItem('nj_vipPass', JSON.stringify(state.vipPass));
+            localStorage.setItem('nj_lastFreeGold', state.lastFreeGold);
+            localStorage.setItem('nj_levels', JSON.stringify(state.levels));
+            localStorage.setItem('nj_wallpaper', state.wallpaper);
+            localStorage.setItem('nj_ads200Today', state.ads200Today);
+            localStorage.setItem('nj_lastAd200Date', state.lastAd200Date);
+            localStorage.setItem('nj_referralCode', state.referralCode);
+            localStorage.setItem('nj_referrals', JSON.stringify(state.referrals));
+        }
+    };
+
+    // ============================================================
+    // 7. SHOP
+    // ============================================================
+    const shop = {
+        open(type) {
+            const costs = { bronze: 100, silver: 300, gold: 800 };
+            if (type !== 'gold' || !this._isFree) {
+                if (state.coins < costs[type]) { alert(`Necesitas ${costs[type]} ●`); return; }
+                state.coins -= costs[type];
+            }
+            this._isFree = false; game.save(); ui.updateCurrency();
+            
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('openingScreen').classList.add('active');
+            
+            const chestImg = ImageLoader.get(type);
+            document.getElementById('luxboxImg').src = chestImg ? chestImg.src : '';
+            
+            const container = document.getElementById('luxboxContainer');
+            container.classList.remove('luxbox-opening', 'luxbox-opened');
+            const rewardEl = document.getElementById('luxboxReward');
+            rewardEl.style.display = 'none'; rewardEl.classList.remove('show');
+            
+            requestAnimationFrame(() => { container.classList.add('luxbox-opening'); });
+            setTimeout(() => {
+                const openImg = ImageLoader.get(type + '_open');
+                if (openImg) document.getElementById('luxboxImg').src = openImg.src;
+                container.classList.remove('luxbox-opening'); container.classList.add('luxbox-opened');
+                this.createParticles();
+            }, 900);
+            setTimeout(() => { this.calculate(type); }, 1400);
+        },
+        createParticles() {
+            const container = document.getElementById('luxboxContainer');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = '50%'; particle.style.top = '50%';
+                const angle = (Math.PI * 2 * i) / 20, distance = 150 + Math.random() * 100;
+                particle.style.setProperty('--tx', `${Math.cos(angle) * distance}px`);
+                particle.style.setProperty('--ty', `${Math.sin(angle) * distance}px`);
+                particle.style.background = ['#ffd700', '#ff00ff', '#00ffff', '#00ff00'][Math.floor(Math.random() * 4)];
+                container.appendChild(particle);
+                setTimeout(() => particle.classList.add('animate'), i * 50);
+                setTimeout(() => particle.remove(), 2000);
+            }
+        },
+        calculate(type) {
+            const rand = Math.random() * 100;
+            let reward;
+            if (type === 'bronze') {
+                if (rand < 80) {
+                    const amount = Math.floor(Math.random() * 31) + 10;
+                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
+                } else {
+                    const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
+                    state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
+                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
+                }
+            } else if (type === 'silver') {
+                if (rand < 65) {
+                    const amount = Math.floor(Math.random() * 76) + 30;
+                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
+                } else if (rand < 90) {
+                    const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
+                    state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
+                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
+                } else {
+                    const pool = ALL_CHARACTERS_RAW.filter(name => !state.chars[name]);
+                    if (pool.length === 0) { state.coins += 50; reward = { type: 'coins', text: '+50 ●', iconKey: 'coin', emoji: '🪙' }; }
+                    else {
+                        const chosen = pool[Math.floor(Math.random() * pool.length)];
+                        state.chars[chosen] = true; if (!state.levels[chosen]) state.levels[chosen] = 0;
+                        reward = { type: 'character', text: `¡${chosen.toUpperCase()}! (${SKILLS[CHARACTER_CLASSES[chosen] || 'common'].name})`, iconKey: chosen, emoji: '👤' };
+                    }
+                }
+            } else if (type === 'gold') {
+                if (rand < 50) {
+                    const amount = Math.floor(Math.random() * 181) + 100;
+                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
+                } else if (rand < 80) {
+                    const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
+                    state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
+                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
+                } else if (rand < 95) {
+                    const pool = ALL_CHARACTERS_RAW.filter(name => !state.chars[name]);
+                    if (pool.length === 0) { state.coins += 100; reward = { type: 'coins', text: '+100 ●', iconKey: 'coin', emoji: '🪙' }; }
+                    else {
+                        const chosen = pool[Math.floor(Math.random() * pool.length)];
+                        state.chars[chosen] = true; if (!state.levels[chosen]) state.levels[chosen] = 0;
+                        reward = { type: 'character', text: `¡${chosen.toUpperCase()}! (${SKILLS[CHARACTER_CLASSES[chosen] || 'common'].name})`, iconKey: chosen, emoji: '👤' };
+                    }
+                } else {
+                    const diamonds = Math.random() * 100 < 80 ? 5 : 10;
+                    state.diamonds += diamonds; reward = { type: 'diamonds', text: `+${diamonds} ♦`, iconKey: 'diamond', emoji: '💎' };
+                }
+            }
+            game.save();
+            renderIcon('luxboxIcon', reward.iconKey, reward.emoji);
+            document.getElementById('luxboxText').textContent = reward.text;
+            const rewardEl = document.getElementById('luxboxReward');
+            rewardEl.style.display = 'block'; rewardEl.classList.remove('show');
+            void rewardEl.offsetWidth; rewardEl.classList.add('show');
+            setTimeout(() => { ui.showFinalReward(reward); }, 900);
+        },
+        claimFreeGold() {
+            const today = new Date().toDateString();
+            if (state.lastFreeGold === today) { alert('Ya reclamaste tu cofre de oro gratis hoy.'); return; }
+            if (!state.vipPass.active || state.vipPass.expiry <= Date.now()) { alert('Necesitas el Pase VIP activo.'); return; }
+            state.lastFreeGold = today; localStorage.setItem('nj_lastFreeGold', today);
+            this._isFree = true; this.open('gold');
+        }
+    };
+
+    // ============================================================
+    // 8. UI
+    // ============================================================
+    const ui = {
+        updateCurrency() {
+            document.getElementById('menuCoins').textContent = state.coins;
+            document.getElementById('menuDiamonds').textContent = state.diamonds;
+            document.getElementById('menuStars').textContent = state.stars || 0;
+            document.getElementById('shopCoins').textContent = state.coins;
+            document.getElementById('shopDiamonds').textContent = state.diamonds;
+            document.getElementById('hudCoins').textContent = state.coins;
+            document.getElementById('menuBest').textContent = state.best;
+            document.getElementById('menuGames').textContent = state.games;
+            const vipHud = document.getElementById('vipHud'), vipMenu = document.getElementById('vipMenuStat');
+            if (state.vipPass.active && state.vipPass.expiry > Date.now()) {
+                vipHud.style.display = 'block'; vipMenu.style.display = 'inline';
+            } else { vipHud.style.display = 'none'; vipMenu.style.display = 'none'; }
+        },
+        showMenu() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('menuScreen').classList.add('active');
+            this.updateCurrency(); game.applyLanguage();
+        },
+        showShop() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('shopScreen').classList.add('active');
+            this.updateCurrency();
+            ['bronze', 'silver', 'gold'].forEach(type => {
+                const img = ImageLoader.get(type);
+                const imgEl = document.getElementById(`img${type.charAt(0).toUpperCase() + type.slice(1)}`);
+                if (img && imgEl) imgEl.src = img.src;
+            });
+            const panel = document.querySelector('#shopScreen .panel');
+            let oldBtn = document.getElementById('freeGoldBtn');
+            if (oldBtn) oldBtn.remove();
+            if (state.vipPass.active && state.vipPass.expiry > Date.now()) {
+                const btn = document.createElement('button');
+                btn.id = 'freeGoldBtn'; btn.className = 'btn'; btn.style.background = '#ffd700'; btn.style.color = '#000';
+                btn.textContent = '🎁 COFRE ORO GRATIS (VIP)'; btn.onclick = shop.claimFreeGold;
+                panel.insertBefore(btn, panel.querySelector('.btn-secondary'));
+            }
+            document.getElementById('shopTitle').textContent = t('shopTitle');
+            document.getElementById('shopBack').textContent = t('shopBack');
+        },
+        showCharacters() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('charactersScreen').classList.add('active');
+            const grid = document.getElementById('charGrid'); grid.innerHTML = '';
+            const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
+            const weeklyVIP = getWeeklyVIPList();
+            
+            ALL_CHARACTERS_RAW.forEach(key => {
+                const card = document.createElement('div');
+                const unlocked = isCharacterUnlocked(key), selected = state.selected === key;
+                const cls = CHARACTER_CLASSES[key] || 'common', level = getEffectiveLevel(key);
+                const isOwned = state.chars[key] || false, isWeeklyVIP = weeklyVIP.includes(key);
+                
+                card.className = `char-card ${unlocked ? 'unlocked' : 'locked'} ${selected ? 'selected' : ''} ${cls === 'vip' ? 'vip' : ''}`;
+                const img = ImageLoader.get(key);
+                if (img) { const imgEl = document.createElement('img'); imgEl.src = img.src; card.appendChild(imgEl); }
+                else { card.innerHTML = unlocked ? '' : '<div class="lock"></div>'; }
+                
+                const nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = key; card.appendChild(nameEl);
+                
+                const levelDiv = document.createElement('div'); levelDiv.className = 'char-level';
+                levelDiv.textContent = (vipActive && isWeeklyVIP) ? `Nv. 6 ⭐VIP` : `Nv. ${level}`;
+                card.appendChild(levelDiv);
+                
+                const skillVal = document.createElement('div'); skillVal.className = 'skill-value';
+                if (level > 0) {
+                    let val = '';
+                    if (cls === 'collector') val = `${[0,3,6,9,12,15][Math.min(level,5)]}s`;
+                    else if (cls === 'agile') val = `${[0,30,60,100,150,200][Math.min(level,5)]}m`;
+                    else if (cls === 'competitive') val = `${[0,2,5,8,12,15][Math.min(level,5)]}%`;
+                    else if (cls === 'tank' && level>=1) val = '1 absorción';
+                    else if (cls === 'vip' && level>=1) val = 'Imán+Revive';
+                    skillVal.textContent = val;
+                } else { skillVal.textContent = t('noSkill'); }
+                card.appendChild(skillVal);
+                
+                if (unlocked) {
+                    if (isOwned) {
+                        const currentLevel = state.levels[key] || 0, nextCost = getUpgradeCost(key, currentLevel);
+                        if (nextCost && canUpgrade(key)) {
+                            const btn = document.createElement('button'); btn.className = 'upgrade-btn enabled';
+                            let label = nextCost.type === 'coins' ? `●${nextCost.amount}` : nextCost.type === 'diamonds' ? `♦${nextCost.amount}` : `⭐${nextCost.amount}`;
+                            btn.textContent = `↑ ${label}`;
+                            btn.onclick = (e) => { e.stopPropagation(); ui.upgradeCharacter(key); };
+                            card.appendChild(btn);
+                        } else if (currentLevel >= 6) {
+                            const maxLabel = document.createElement('span'); maxLabel.style.cssText = 'font-size:0.3em; color:#ffd700;';
+                            maxLabel.textContent = t('maxLabel'); card.appendChild(maxLabel);
+                        }
+                        if (currentLevel < 6) {
+                            const maxBtn = document.createElement('button'); maxBtn.className = 'max-btn'; maxBtn.textContent = '⭐100 MAX';
+                            maxBtn.onclick = (e) => { e.stopPropagation(); ui.buyMaxLevel(key); };
+                            card.appendChild(maxBtn);
+                        }
+                    } else if (vipActive && isWeeklyVIP) {
+                        const vipLabel = document.createElement('span'); vipLabel.style.cssText = 'font-size:0.3em; color:#ffd700;';
+                        vipLabel.textContent = t('vipWeekly'); card.appendChild(vipLabel);
+                    }
+                } else {
+                    const lockLabel = document.createElement('span'); lockLabel.style.cssText = 'font-size:0.3em; color:#888;';
+                    lockLabel.textContent = t('locked'); card.appendChild(lockLabel);
+                }
+                card.onclick = () => { if (unlocked) { state.selected = key; game.save(); ui.showCharacters(); } };
+                grid.appendChild(card);
+            });
+            document.getElementById('charsTitle').textContent = t('charsTitle');
+            document.getElementById('charsBack').textContent = t('charsBack');
+        },
+        upgradeCharacter(charName) {
+            const currentLevel = state.levels[charName] || 0;
+            if (currentLevel >= 6) return;
+            const cost = getUpgradeCost(charName, currentLevel);
+            if (!cost) return;
+            if (cost.type === 'coins' && state.coins < cost.amount) { alert(`Necesitas ${cost.amount} monedas.`); return; }
+            else if (cost.type === 'diamonds' && state.diamonds < cost.amount) { alert(`Necesitas ${cost.amount} diamantes.`); return; }
+            else if (cost.type === 'stars' && state.stars < cost.amount) { ui.buyUpgradeWithStars(charName, cost.amount); return; }
+            
+            if (cost.type === 'coins') state.coins -= cost.amount;
+            else if (cost.type === 'diamonds') state.diamonds -= cost.amount;
+            state.levels[charName] = currentLevel + 1;
+            game.save(); ui.updateCurrency(); ui.showCharacters();
+            alert(`¡${charName.toUpperCase()} subió a nivel ${currentLevel+1}!`);
+        },
+        buyUpgradeWithStars(charName, amount) {
+            if (!window.Telegram || !window.Telegram.WebApp) { alert('Esta función solo está disponible en Telegram Mini App.'); return; }
+            Telegram.WebApp.openInvoice({
+                title: `Mejora de ${charName} a nivel ${(state.levels[charName]||0)+1}`,
+                description: 'Paga con Telegram Stars',
+                payload: JSON.stringify({ type: 'upgrade', char: charName, level: (state.levels[charName]||0)+1 }),
+                currency: 'stars', prices: [{ label: 'Mejora', amount: amount }]
+            }, (status) => {
+                if (status === 'paid') {
+                    state.levels[charName] = (state.levels[charName] || 0) + 1;
+                    state.stars = (state.stars || 0) - amount;
+                    game.save(); ui.updateCurrency(); ui.showCharacters();
+                    alert(`¡${charName.toUpperCase()} subió a nivel ${state.levels[charName]}!`);
+                }
+            });
+        },
+        buyMaxLevel(charName) {
+            if (!window.Telegram || !window.Telegram.WebApp) { alert('Esta función solo está disponible en Telegram Mini App.'); return; }
+            Telegram.WebApp.openInvoice({
+                title: `Nivel MAX para ${charName}`, description: 'Desbloquea el nivel 6 (Vida Extra) directamente',
+                payload: JSON.stringify({ type: 'max_level', char: charName }), currency: 'stars', prices: [{ label: 'Nivel 6', amount: 100 }]
+            }, (status) => {
+                if (status === 'paid') {
+                    state.levels[charName] = 6; state.stars = (state.stars || 0) - 100;
+                    game.save(); ui.updateCurrency(); ui.showCharacters();
+                    alert(`¡${charName.toUpperCase()} ahora tiene nivel 6 (Vida Extra)!`);
+                }
+            });
+        },
+        showPass() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('passScreen').classList.add('active');
+            const status = document.getElementById('passStatus');
+            if (state.vipPass.active && state.vipPass.expiry > Date.now()) {
+                status.textContent = `✅ Activo - ${Math.ceil((state.vipPass.expiry - Date.now()) / (24*60*60*1000))} días restantes`;
+            } else { status.textContent = '❌ No activo'; }
+            this.updateCurrency();
+            document.getElementById('passTitle').textContent = t('passTitle');
+            document.getElementById('passPrice').textContent = t('passPrice');
+            document.getElementById('passBuy').textContent = t('passBuy');
+            document.getElementById('passBack').textContent = t('passBack');
+            document.getElementById('passDesc').innerHTML = (LANG[currentLang].passDesc || LANG.es.passDesc).map(d => `<div>${d}</div>`).join('');
+        },
+        showFinalReward(reward) {
+            document.getElementById('openingScreen').classList.remove('active');
+            document.getElementById('rewardScreen').classList.add('active');
+            renderIcon('rewardIcon', reward.iconKey, reward.emoji);
+            document.getElementById('rewardText').textContent = reward.text;
+            document.getElementById('flash').classList.add('active');
+            setTimeout(() => document.getElementById('flash').classList.remove('active'), 100);
+        },
+        closeReward() { document.getElementById('rewardScreen').classList.remove('active'); this.showShop(); },
+        buyPass() {
+            if (!window.Telegram || !window.Telegram.WebApp) { alert('Esta función solo está disponible en Telegram Mini App.'); return; }
+            Telegram.WebApp.openInvoice({
+                title: 'Pase VIP Semanal', description: 'Multiplicador 2X, sin anuncios, cofre diario y 10 personajes VIP semanales (nivel 6)',
+                payload: JSON.stringify({ type: 'vip_pass' }), currency: 'stars', prices: [{ label: 'Pase VIP (7 días)', amount: 50 }]
+            }, (status) => {
+                if (status === 'paid') {
+                    state.vipPass.active = true; state.vipPass.expiry = Date.now() + 7 * 24 * 60 * 60 * 1000;
+                    state.stars = (state.stars || 0) - 50; game.save(); ui.updateCurrency(); ui.showMenu();
+                    alert('¡Pase VIP activado por 7 días!');
+                }
+            });
+        },
+        showLevels() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('wallpaperScreen').classList.add('active');
+            this.updateCurrency(); this.renderLevels();
+            document.getElementById('wallTitle').textContent = t('wallTitle');
+            document.getElementById('wallSub').textContent = t('wallSub');
+            document.getElementById('wallBack').textContent = t('wallBack');
+        },
+        renderLevels() {
+            const grid = document.getElementById('wpGrid'); grid.innerHTML = '';
+            const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
+            for (let i = 1; i <= 4; i++) {
+                const card = document.createElement('div'); card.className = 'wp-card';
+                const img = ImageLoader.get('wallpaper' + i);
+                if (img) { const imgEl = document.createElement('img'); imgEl.src = img.src; card.appendChild(imgEl); }
+                else { card.style.background = '#333'; card.textContent = i; }
+
+                const isLocked = (i === 3 || i === 4) && !vipActive;
+                if (isLocked) {
+                    card.classList.add('locked');
+                    const lock = document.createElement('span'); lock.className = 'lock-icon'; lock.textContent = '🔒';
+                    card.appendChild(lock);
+                }
+                if (state.wallpaper === i) card.classList.add('selected');
+
+                card.onclick = () => {
+                    if (isLocked) { alert('Desbloquea el Pase VIP para usar este nivel.'); return; }
+                    state.wallpaper = (state.wallpaper === i) ? 1 : i;
+                    localStorage.setItem('nj_wallpaper', state.wallpaper);
+                    ui.renderLevels();
+                };
+
+                const label = document.createElement('div'); label.className = 'wp-label';
+                label.textContent = `${LEVEL_CONFIG[i].name}: ${LEVEL_CONFIG[i].desc}`;
+                card.appendChild(label);
+                grid.appendChild(card);
+            }
+        },
+        showEarn() {
+            document.querySelectorAll('.ui-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('earnScreen').classList.add('active');
+            this.updateCurrency(); this.updateEarnUI();
+            document.getElementById('earnTitle').textContent = t('earnTitle');
+            document.getElementById('earnAdTitle').textContent = t('earnAdTitle');
+            document.getElementById('earnAdDesc').textContent = t('earnAdDesc');
+            document.getElementById('earnRefTitle').textContent = t('earnRefTitle');
+            document.getElementById('earnRefDesc').textContent = t('earnRefDesc');
+            document.getElementById('earnBack').textContent = t('earnBack');
+            document.getElementById('btnAd200').textContent = t('btnAd200');
+            document.getElementById('btnShareRef').textContent = t('btnShareRef');
+            document.getElementById('adCounter').innerHTML = t('adCounter');
+            document.getElementById('refStatus').innerHTML = t('refStatus');
+        },
+        updateEarnUI() {
+            document.getElementById('ads200Left').textContent = Math.max(0, 3 - state.ads200Today);
+            document.getElementById('myRefCode').textContent = state.referralCode;
+            document.getElementById('refCount').textContent = state.referrals.rewarded ? state.referrals.rewarded.length : 0;
+            const friendList = document.getElementById('friendList'); friendList.innerHTML = '';
+            if (state.referrals.rewarded && state.referrals.rewarded.length > 0) {
+                state.referrals.rewarded.forEach(f => {
+                    const div = document.createElement('div');
+                    div.textContent = `✅ ${f} (${currentLang === 'es' ? 'recompensado' : 'rewarded'})`;
+                    friendList.appendChild(div);
+                });
+            } else {
+                friendList.textContent = currentLang === 'es' ? 'Aún no has recompensado a ningún amigo.' : 'No friends rewarded yet.';
+            }
+        },
+        shareReferral() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const shareUrl = `${baseUrl}?ref=${state.referralCode}`;
+            if (window.Telegram && window.Telegram.WebApp) {
+                Telegram.WebApp.shareToStory(`¡Juega Neon Jumper y gana monedas! Usa mi enlace: ${shareUrl}`);
+            } else {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(shareUrl).then(() => {
+                        alert(currentLang === 'es' ? '¡Enlace copiado! Compártelo con tus amigos.' : 'Link copied! Share it with your friends.');
+                    });
+                } else { alert(shareUrl); }
+            }
+        },
+        processReferral() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ref = urlParams.get('ref');
+            if (ref && ref !== state.referralCode && !state.referrals.invited.includes(ref)) {
+                state.referrals.invited.push(ref);
+                localStorage.setItem('nj_referrals', JSON.stringify(state.referrals));
+                let friendProgress = JSON.parse(localStorage.getItem('nj_friendProgress')) || {};
+                if (!friendProgress[ref]) friendProgress[ref] = { games: 0, ads: 0, rewarded: false };
+                localStorage.setItem('nj_friendProgress', JSON.stringify(friendProgress));
+            }
+        },
+        onGameEnd() {
+            const ref = new URLSearchParams(window.location.search).get('ref');
+            if (ref && ref !== state.referralCode) {
+                let friendProgress = JSON.parse(localStorage.getItem('nj_friendProgress')) || {};
+                if (friendProgress[ref] && !friendProgress[ref].rewarded) {
+                    friendProgress[ref].games = (friendProgress[ref].games || 0) + 1;
+                    if (friendProgress[ref].games >= 5 && friendProgress[ref].ads >= 2) {
+                        if (!state.referrals.rewarded.includes(ref)) {
+                            state.referrals.rewarded.push(ref);
+                            state.coins += 300;
+                            localStorage.setItem('nj_referrals', JSON.stringify(state.referrals));
+                            game.save(); ui.updateCurrency();
+                            alert(currentLang === 'es' ? '¡Tu amigo cumplió los requisitos! Has ganado 300 monedas.' : 'Your friend met the requirements! You earned 300 coins.');
+                        }
+                        friendProgress[ref].rewarded = true;
+                    }
+                    localStorage.setItem('nj_friendProgress', JSON.stringify(friendProgress));
+                }
+            }
+        },
+        onAdWatched() {
+            const ref = new URLSearchParams(window.location.search).get('ref');
+            if (ref && ref !== state.referralCode) {
+                let friendProgress = JSON.parse(localStorage.getItem('nj_friendProgress')) || {};
+                if (friendProgress[ref] && !friendProgress[ref].rewarded) {
+                    friendProgress[ref].ads = (friendProgress[ref].ads || 0) + 1;
+                    if (friendProgress[ref].games >= 5 && friendProgress[ref].ads >= 2) {
+                        if (!state.referrals.rewarded.includes(ref)) {
+                            state.referrals.rewarded.push(ref);
+                            state.coins += 300;
+                            localStorage.setItem('nj_referrals', JSON.stringify(state.referrals));
+                            game.save(); ui.updateCurrency();
+                            alert(currentLang === 'es' ? '¡Tu amigo cumplió los requisitos! Has ganado 300 monedas.' : 'Your friend met the requirements! You earned 300 coins.');
+                        }
+                        friendProgress[ref].rewarded = true;
+                    }
+                    localStorage.setItem('nj_friendProgress', JSON.stringify(friendProgress));
+                }
+            }
+        }
+    };
+
+    // ============================================================
+    // 9. INICIALIZACIÓN
+    // ============================================================
+    window.onload = () => {
+        document.getElementById('loading').style.display = 'none';
+        game.init(); ui.showMenu();
+        ImageLoader.loadAll().then(() => console.log('✅ Assets cargados'));
+        if (window.Telegram && window.Telegram.WebApp) Telegram.WebApp.ready();
+        ui.processReferral();
+        
+        const originalWatchAd200 = game.watchAd200;
+        game.watchAd200 = function() { originalWatchAd200.call(this); ui.onAdWatched(); };
+        
+        const originalEnd = game.end;
+        game.end = function() { originalEnd.call(this); ui.onGameEnd(); };
+        
+        const originalRevive = game.reviveWithAd;
+        game.reviveWithAd = function() { originalRevive.call(this); ui.onAdWatched(); };
+    };
+    </script>
+</body>
+</html>
