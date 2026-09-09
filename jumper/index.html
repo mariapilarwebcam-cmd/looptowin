@@ -746,19 +746,44 @@
                 else if (rand > trapChance) { type = 'trap'; this.nextPlatformSafe = true; }
             }
             
-            const maxJumpX = Math.min(150, this.canvas.width * 0.35);
-            const margin = Math.max(30, this.canvas.width * 0.05);
-            const centerX = highestPlat.x + highestPlat.w / 2;
-            const minX = Math.max(margin, centerX - maxJumpX);
-            const maxX = Math.min(this.canvas.width - margin - 60, centerX + maxJumpX);
+            // LÓGICA MEJORADA PARA CUBRIR TODA LA PANTALLA CON HUECOS JUGABLES
+            const screenWidth = this.canvas.width;
+            // El jugador puede recorrer aprox 160px en el aire horizontalmente a velocidad máxima
+            const maxReach = Math.min(160, screenWidth * 0.35); 
+            const margin = 20;
             
-            let w = safeJump ? Math.min(100, this.canvas.width * 0.25) : (type === 'moving' ? 80 + Math.random() * 60 : 60 + Math.random() * 40);
-            const x = Math.random() * (maxX - minX) + minX;
+            const centerX = highestPlat.x + highestPlat.w / 2;
+            
+            // Decidir si saltamos a la izquierda o derecha, o si usamos el wrap-around de la pantalla
+            // Para cubrir toda la pantalla, a veces forzamos un salto hacia el lado opuesto si estamos muy cerca de un borde
+            let targetX = centerX;
+            if (centerX < screenWidth * 0.3) {
+                targetX = centerX + (maxReach * 0.6) + Math.random() * (maxReach * 0.4);
+            } else if (centerX > screenWidth * 0.7) {
+                targetX = centerX - (maxReach * 0.6) - Math.random() * (maxReach * 0.4);
+            } else {
+                // Estamos en el medio, podemos ir a cualquier lado dentro del alcance
+                const dir = Math.random() > 0.5 ? 1 : -1;
+                targetX = centerX + dir * (40 + Math.random() * (maxReach - 40));
+            }
+            
+            // Ancho de la plataforma adaptativo al dispositivo
+            let w;
+            if (safeJump) {
+                w = Math.min(120, Math.max(80, screenWidth * 0.25));
+            } else if (type === 'moving') {
+                w = Math.min(100, Math.max(70, screenWidth * 0.2));
+            } else {
+                w = Math.min(80, Math.max(60, screenWidth * 0.15));
+            }
+            
+            // Asegurar que la plataforma esté dentro de los límites de la pantalla
+            const x = Math.max(margin, Math.min(targetX - w/2, screenWidth - w - margin));
             
             this.platforms.push({
                 x, y: newY, w, h: 18, type,
                 vx: type === 'moving' ? (Math.random() > 0.5 ? 2 : -2) : 0,
-                originX: x, moveRange: Math.min(50, this.canvas.width * 0.1),
+                originX: x, moveRange: Math.min(60, screenWidth * 0.15),
                 standTime: 0, falling: false,
                 hasSpikes: type === 'trap' && Math.random() > 0.5,
                 spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
@@ -799,7 +824,7 @@
                                 w: 40, h: 40, type: chosen,
                                 vx: (Math.random() > 0.5 ? 1.2 : -1.2) * (1 + this.difficulty * 0.3),
                                 angle: 0,
-                                shootTimer: (40 + Math.random() * 60) / diffMult, // Más agresivo en niveles altos
+                                shootTimer: (40 + Math.random() * 60) / diffMult,
                                 shootState: 0
                             });
                         }
@@ -989,6 +1014,7 @@
             
             p.vx *= 0.88; p.vx = Math.max(-8, Math.min(8, p.vx));
             p.x += p.vx;
+            // Wrap-around para desplazarse por toda la pantalla
             if (p.x + p.w < 0) p.x = this.canvas.width;
             if (p.x > this.canvas.width) p.x = -p.w;
             
@@ -1224,7 +1250,6 @@
             if (state.ranking.length > 100) state.ranking = state.ranking.slice(0,100);
             localStorage.setItem('nj_ranking', JSON.stringify(state.ranking));
 
-            // APLICAR MULTIPLICADOR DE MONEDAS DEL NIVEL
             const coinMult = this.levelConfig.coins;
             const earned = Math.floor(this.coins * coinMult);
             
@@ -1734,7 +1759,11 @@
         document.getElementById('loading').style.display = 'none';
         game.init(); ui.showMenu();
         ImageLoader.loadAll().then(() => console.log('✅ Assets cargados'));
-        if (window.Telegram && window.Telegram.WebApp) Telegram.WebApp.ready();
+        if (window.Telegram && window.Telegram.WebApp) {
+            Telegram.WebApp.ready();
+            Telegram.WebApp.expand();
+            Telegram.WebApp.setHeaderColor('#0a0a1a');
+        }
         ui.processReferral();
         
         const originalWatchAd200 = game.watchAd200;
