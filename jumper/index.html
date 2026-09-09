@@ -601,6 +601,7 @@
         _tankShield: false, _vipRevive: false, _vipPassActive: false,
         _agileBoost: false, _vipX2: false, _extraLife: false, _extraLifeUsed: false,
         _passiveShieldUsed: false, _vipReviveUsed: false,
+        isDead: false, // CORRECCIÓN: Bandera para evitar conflictos en Game Over
         levelConfig: LEVEL_CONFIG[1],
         
         init() {
@@ -700,7 +701,9 @@
             this._vipPassActive = (state.vipPass.active && state.vipPass.expiry > Date.now());
             this._vipX2 = this._vipPassActive;
             
-            this.running = true; this.score = 0; this.coins = 0; this.camera = 0; this.difficulty = 1;
+            this.running = true; 
+            this.isDead = false; // CORRECCIÓN: Resetear estado de muerte
+            this.score = 0; this.coins = 0; this.camera = 0; this.difficulty = 1;
             this.platforms = []; this.coins_list = []; this.enemies = []; this.projectiles = []; this.particles = [];
             this.shieldActive = false; this.shieldTime = 0; this.nextPlatformSafe = false;
             this.activePowerups = {}; this.powerupTimers = {};
@@ -751,32 +754,33 @@
                 else if (rand > trapChance) { type = 'trap'; this.nextPlatformSafe = true; }
             }
             
+            // CORRECCIÓN: Lógica de distribución mejorada para evitar agrupación en un solo lado
             const screenWidth = this.canvas.width;
-            const maxReach = Math.min(160, screenWidth * 0.35); 
-            const margin = 20;
+            const margin = screenWidth * 0.05;
+            const minW = screenWidth * 0.15;
+            const maxW = screenWidth * 0.25;
+            let w = safeJump ? maxW : (type === 'moving' ? screenWidth * 0.20 : (minW + Math.random() * (maxW - minW)));
             
             const centerX = highestPlat.x + highestPlat.w / 2;
+            let targetX;
+            const randomSide = Math.random();
             
-            let targetX = centerX;
-            if (centerX < screenWidth * 0.3) {
-                targetX = centerX + (maxReach * 0.6) + Math.random() * (maxReach * 0.4);
-            } else if (centerX > screenWidth * 0.7) {
-                targetX = centerX - (maxReach * 0.6) - Math.random() * (maxReach * 0.4);
+            if (centerX < screenWidth * 0.4) {
+                // Si está a la izquierda, forzar a la derecha
+                targetX = (screenWidth * 0.5) + Math.random() * (screenWidth * 0.45 - w);
+            } else if (centerX > screenWidth * 0.6) {
+                // Si está a la derecha, forzar a la izquierda
+                targetX = margin + Math.random() * (screenWidth * 0.45 - w);
             } else {
-                const dir = Math.random() > 0.5 ? 1 : -1;
-                targetX = centerX + dir * (40 + Math.random() * (maxReach - 40));
+                // Si está en el centro, elegir un lado aleatorio
+                if (randomSide > 0.5) {
+                    targetX = margin + Math.random() * (screenWidth * 0.4 - w);
+                } else {
+                    targetX = (screenWidth * 0.55) + Math.random() * (screenWidth * 0.4 - w);
+                }
             }
             
-            let w;
-            if (safeJump) {
-                w = Math.min(120, Math.max(80, screenWidth * 0.25));
-            } else if (type === 'moving') {
-                w = Math.min(100, Math.max(70, screenWidth * 0.2));
-            } else {
-                w = Math.min(80, Math.max(60, screenWidth * 0.15));
-            }
-            
-            const x = Math.max(margin, Math.min(targetX - w/2, screenWidth - w - margin));
+            const x = Math.max(margin, Math.min(targetX, screenWidth - w - margin));
             
             this.platforms.push({
                 x, y: newY, w, h: 18, type,
@@ -946,6 +950,9 @@
         },
         
         explode() {
+            if (this.isDead) return; // CORRECCIÓN: Prevenir múltiples llamadas
+            this.isDead = true;
+            
             if (navigator.vibrate) navigator.vibrate(200);
             if (this._tankShield && !this._passiveShieldUsed) {
                 this._passiveShieldUsed = true;
@@ -1237,8 +1244,10 @@
         },
         
         end() {
-            if (this.running) return; // CORRECCIÓN: Si se revivió, no mostrar Game Over de nuevo
+            if (!this.isDead) return; // CORRECCIÓN: Solo ejecutar si realmente murió
+            this.isDead = false; // Resetear para la próxima partida
             this.running = false;
+            
             let finalScore = this.score;
             if (this._scoreMultiplier > 1.0) finalScore = Math.floor(finalScore * this._scoreMultiplier);
             
@@ -1273,7 +1282,6 @@
             if (state.adsToday >= 5) { alert('Limite de 5 anuncios diarios alcanzado.'); return; }
             if (state.adsUsedInGame >= 1) { alert('Solo 1 revive por partida.'); return; }
             
-            // Aquí iría la lógica real de mostrar el anuncio. Asumimos que se completa con éxito.
             state.adsToday++; 
             state.adsUsedInGame++;
             localStorage.setItem('nj_adsToday', state.adsToday);
@@ -1282,37 +1290,43 @@
             document.getElementById('gameOverScreen').classList.remove('active');
             document.getElementById('hud').classList.add('active');
             
-            // 1. Reposicionar al jugador en un lugar seguro
+            this.isDead = false;
+            this.running = true;
+            
+            // CORRECCIÓN: Mantener la dificultad exacta correspondiente al score actual
+            this.difficulty = 1 + Math.floor(this.score / 300);
+            
+            // Reposicionar al jugador de forma segura
             this.player.x = this.canvas.width / 2 - 20;
-            this.player.y = this.canvas.height - 200;
+            this.player.y = this.canvas.height - 250; // Un poco más arriba para dar tiempo de reacción
             this.player.vx = 0;
-            this.player.vy = -8; // Pequeño impulso hacia arriba
+            this.player.vy = -10; // Impulso controlado, no excesivo
             this.player.jumpCount = 0;
             
-            // 2. Limpiar amenazas cercanas (mitad inferior de la pantalla) para dar un respiro
+            // Limpiar amenazas cercanas
             this.enemies = this.enemies.filter(en => en.y < this.canvas.height / 2);
-            this.projectiles = []; // Limpiar todos los proyectiles
+            this.projectiles = [];
             
-            // 3. Generar plataformas de rescate seguras en la parte inferior
+            // CORRECCIÓN: Generar 3 plataformas de rescate perfectamente distribuidas
             const w = this.canvas.width;
             const h = this.canvas.height;
             this.platforms.push({
-                x: w * 0.2, y: h - 50, w: w * 0.6, h: 20, type: 'normal',
-                vx: 0, originX: w * 0.2, moveRange: 0, standTime: 0, falling: false,
+                x: w * 0.35, y: h - 80, w: w * 0.30, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.35, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             this.platforms.push({
-                x: w * 0.1, y: h - 150, w: w * 0.35, h: 20, type: 'normal',
-                vx: 0, originX: w * 0.1, moveRange: 0, standTime: 0, falling: false,
+                x: w * 0.10, y: h - 180, w: w * 0.30, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.10, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             this.platforms.push({
-                x: w * 0.55, y: h - 150, w: w * 0.35, h: 20, type: 'normal',
-                vx: 0, originX: w * 0.55, moveRange: 0, standTime: 0, falling: false,
+                x: w * 0.60, y: h - 180, w: w * 0.30, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.60, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             
-            // 4. Activar escudo temporal de 5 segundos (inmunidad)
+            // Activar escudo temporal de 5 segundos
             this.shieldActive = true;
             this.shieldTime = 5;
             document.getElementById('shieldIndicator').classList.add('active');
@@ -1328,8 +1342,6 @@
                 }
             }, 1000);
             
-            // 5. Reanudar el juego manteniendo el score y monedas actuales
-            this.running = true;
             this.updatePowerupBar();
             this.loop();
         },
@@ -1807,10 +1819,15 @@
     // ============================================================
     // 9. INICIALIZACIÓN
     // ============================================================
-    window.onload = () => {
+    window.onload = async () => {
+        game.init();
+        
+        // CORRECCIÓN: Esperar a que todas las imágenes carguen antes de mostrar el menú
+        await ImageLoader.loadAll();
+        
         document.getElementById('loading').style.display = 'none';
-        game.init(); ui.showMenu();
-        ImageLoader.loadAll().then(() => console.log('✅ Assets cargados'));
+        ui.showMenu();
+        
         if (window.Telegram && window.Telegram.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
