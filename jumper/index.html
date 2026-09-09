@@ -14,17 +14,44 @@
         .ui-screen { position:absolute; top:0; left:0; width:100%; height:100%; display:none; flex-direction:column; justify-content:center; align-items:center; background:rgba(0,0,0,0.85); z-index:10; padding:20px; backdrop-filter:blur(2px); }
         .ui-screen.active { display:flex; animation:fadeIn 0.3s steps(4); }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-        .panel { background:rgba(26,26,46,0.95); border:4px solid #00ff00; padding:15px 12px; max-width:95%; width:400px; text-align:center; box-shadow:0 0 30px rgba(0,255,0,0.3),8px 8px 0 #000; max-height:90vh; overflow:hidden; position:relative; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
         
-        /* CORRECCIÓN 2: Scroll forzado solo en Tienda y Personajes */
-        .shop-panel { 
-            overflow-y: auto !important; 
-            justify-content: flex-start !important; 
-            padding: 20px 15px; 
-            max-height: 85vh; 
-            touch-action: pan-y !important; 
-            -webkit-overflow-scrolling: touch; 
+        /* CORRECCIÓN 1: Panel base vuelve a overflow: hidden para no romper otros menús */
+        .panel { 
+            background:rgba(26,26,46,0.95); 
+            border:4px solid #00ff00; 
+            padding:15px 12px; 
+            max-width:95%; 
+            width:400px; 
+            text-align:center; 
+            box-shadow:0 0 30px rgba(0,255,0,0.3),8px 8px 0 #000; 
+            max-height:90vh; 
+            overflow: hidden; 
+            position:relative; 
+            border-radius:8px; 
+            display:flex; 
+            flex-direction:column; 
+            align-items:center; 
+            justify-content: flex-start; 
         }
+        
+        /* CORRECCIÓN 2: Forzar comportamiento de scroll táctil en áreas específicas */
+        .shop-panel, 
+        .character-grid, 
+        .friend-list {
+            touch-action: pan-y !important;
+            -webkit-overflow-scrolling: touch !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+        }
+
+        /* CORRECCIÓN 3: Permitir scroll en los hijos de estas áreas (evita que el selector * lo bloquee) */
+        .shop-panel *, 
+        .character-grid *, 
+        .friend-list * {
+            touch-action: pan-y !important;
+        }
+        
+        .shop-panel { justify-content:flex-start; padding:20px 15px; max-height:85vh; width: 100%; }
         .shop-panel::-webkit-scrollbar { width:6px; }
         .shop-panel::-webkit-scrollbar-track { background:rgba(0,0,0,0.5); border-radius:10px; }
         .shop-panel::-webkit-scrollbar-thumb { background:#00ff00; border-radius:10px; }
@@ -34,9 +61,9 @@
         .logo { font-size:1.2em; color:#00ff00; margin-bottom:6px; text-shadow:0 0 20px #00ff00,0 0 40px #00ff00,4px 4px 0 #005500; line-height:1.2; animation:logoPulse 2s ease-in-out infinite; }
         @keyframes logoPulse { 0%,100% { transform:scale(1); text-shadow:0 0 20px #00ff00,0 0 40px #00ff00; } 50% { transform:scale(1.03); text-shadow:0 0 30px #00ff00,0 0 60px #00ff00,0 0 80px #00ff00; } }
         .subtitle { font-size:0.4em; color:#aaa; margin-bottom:6px; letter-spacing:2px; }
-        .stats { display:flex; justify-content:center; gap:12px; font-size:0.4em; color:#ccc; margin-bottom:8px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px; }
+        .stats { display:flex; justify-content:center; gap:12px; font-size:0.4em; color:#ccc; margin-bottom:8px; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:4px; width: 100%; }
         .stats span { color:#00ff00; }
-        .currency { display:flex; gap:10px; justify-content:center; margin:8px 0; font-size:0.6em; }
+        .currency { display:flex; gap:10px; justify-content:center; margin:8px 0; font-size:0.6em; width: 100%; }
         .currency-item { background:#000; border:2px solid #fff; padding:4px 8px; display:flex; align-items:center; gap:4px; border-radius:4px; }
         .coin { color:#ffd700; }
         .diamond { color:#00ffff; }
@@ -55,7 +82,7 @@
         .powerup-item img { width:32px; height:32px; object-fit:contain; image-rendering:pixelated; }
         .powerup-item .badge { position:absolute; top:-8px; right:-8px; background:#ff00ff; color:#fff; font-size:0.4em; padding:2px 6px; border-radius:10px; border:2px solid #000; }
         .powerup-item.active-power { border-color:#ffd700; box-shadow:0 0 20px #ffd700; }
-        .shop-grid { display:grid; gap:20px; margin:25px 0; }
+        .shop-grid { display:grid; gap:20px; margin:25px 0; width: 100%; }
         .chest-item { background:linear-gradient(135deg,#1a1a2e 0%,#0f0f1e 100%); border:4px solid; padding:20px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:15px; transition:all 0.2s; position:relative; overflow:hidden; border-radius:8px; }
         .chest-item::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(45deg,transparent,rgba(255,255,255,0.1),transparent); transform:translateX(-100%); transition:transform 0.6s; }
         .chest-item:hover::before { transform:translateX(100%); }
@@ -90,17 +117,13 @@
         .particle.animate { animation:particleFly 2s ease-out forwards; }
         @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
         
-        /* CORRECCIÓN 2: Scroll forzado solo en la grilla de personajes */
         .character-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); 
             gap: 10px; 
             margin: 20px 0; 
             max-height: 45vh; 
-            overflow-y: auto !important; 
             padding: 5px; 
-            touch-action: pan-y !important; 
-            -webkit-overflow-scrolling: touch; 
             width: 100%;
         }
         
@@ -150,7 +173,7 @@
         .earn-card .desc { font-size:0.4em; color:#aaa; margin-bottom:10px; }
         .referral-code { font-size:0.6em; color:#00ffff; background:#000; padding:5px 10px; border-radius:4px; margin:10px 0; display:inline-block; }
         
-        .friend-list { font-size:0.35em; color:#aaa; max-height:100px; overflow-y:auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        .friend-list { font-size:0.35em; color:#aaa; max-height:100px; padding: 5px; width: 100%; }
     </style>
 </head>
 <body>
@@ -623,6 +646,7 @@
         _passiveShieldUsed: false, _vipReviveUsed: false,
         _deathX: null, _deathY: null,
         _difficultyBase: 0,
+        _loopGen: 0, // CORRECCIÓN: Blindaje contra bucles duplicados
         isDead: false,
         levelConfig: LEVEL_CONFIG[1],
         
@@ -701,6 +725,7 @@
         },
         
         start() {
+            this._loopGen++; // CORRECCIÓN: Invalidar bucles anteriores
             if (this.animationId) cancelAnimationFrame(this.animationId);
             
             const charName = state.selected;
@@ -761,7 +786,9 @@
             if (validPlatforms.length === 0) return;
             const highestPlat = validPlatforms.reduce((prev, curr) => prev.y < curr.y ? prev : curr);
             
-            const difficultyFactor = Math.min(1, this.score / 2000);
+            const scoreSinceReset = this.score - this._difficultyBase;
+            const difficultyFactor = Math.min(1, scoreSinceReset / 2000);
+            
             const baseGap = Math.max(60, this.canvas.height * 0.08);
             const verticalGap = baseGap + Math.random() * 30 + (difficultyFactor * 15);
             const newY = highestPlat.y - verticalGap;
@@ -1040,9 +1067,17 @@
         },
         
         update() {
+            // CORRECCIÓN: Las partículas SIEMPRE deben decaer, incluso con running=false,
+            // para que el loop() sepa que puede detenerse solo.
+            this.particles.forEach(pa => {
+                pa.x += pa.vx; pa.y += pa.vy; pa.vy += 0.2; pa.life -= 0.04; pa.size *= 0.95;
+                if (pa.rotation !== undefined) pa.rotation += pa.rotSpeed || 0;
+            });
+            this.particles = this.particles.filter(pa => pa.life > 0);
+
             if (!this.running) return;
-            const p = this.player;
             
+            const p = this.player;
             const scoreSinceReset = this.score - this._difficultyBase;
             this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
             
@@ -1088,7 +1123,7 @@
             this.coins_list = this.coins_list.filter(c => c.y < this.canvas.height + 100 && !c.collected);
             this.enemies = this.enemies.filter(en => en.y < this.canvas.height + 100);
             this.projectiles = this.projectiles.filter(pr => pr.y < this.canvas.height + 100 && pr.y > -200 && pr.life > 0);
-            this.particles = this.particles.filter(pa => pa.life > 0);
+            // (Eliminado filtro duplicado de partículas)
             
             if (p.vy > 0) {
                 this.platforms.forEach(pl => {
@@ -1165,10 +1200,7 @@
                 }
             });
             
-            this.particles.forEach(pa => {
-                pa.x += pa.vx; pa.y += pa.vy; pa.vy += 0.2; pa.life -= 0.04; pa.size *= 0.95;
-                if (pa.rotation !== undefined) pa.rotation += pa.rotSpeed || 0;
-            });
+            // (Eliminado segundo forEach de partículas duplicado)
             
             if (p.y > this.canvas.height && !this.isDead) this.explode();
             document.getElementById('hudScore').textContent = this.score;
@@ -1272,9 +1304,12 @@
         },
         
         loop() {
+            const myGen = this._loopGen; // CORRECCIÓN: Blindaje contra bucles duplicados
             if (this.running || this.particles.length > 0) {
                 this.update(); this.draw();
-                this.animationId = requestAnimationFrame(() => this.loop());
+                this.animationId = requestAnimationFrame(() => {
+                    if (myGen === this._loopGen) this.loop();
+                });
             }
         },
         
@@ -1322,15 +1357,19 @@
             localStorage.setItem('nj_adsToday', state.adsToday);
             this.save();
             
+            this._loopGen++; // CORRECCIÓN: Invalidar bucles anteriores
+            if (this.animationId) cancelAnimationFrame(this.animationId);
+            
             document.getElementById('gameOverScreen').classList.remove('active');
             document.getElementById('hud').classList.add('active');
             
             this.isDead = false;
             this.running = true;
             
-            // CORRECCIÓN 1: Reiniciar dificultad a 1.0 desde el puntaje actual para evitar aceleración
-            this._difficultyBase = this.score;
-            this.difficulty = 1.0;
+            // CORRECCIÓN: Retroceder un escalón de dificultad, no resetear a 1.0
+            this._difficultyBase = (this._difficultyBase || 0) + 30;
+            const scoreSinceReset = Math.max(0, this.score - this._difficultyBase);
+            this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
             
             const w = this.canvas.width;
             const h = this.canvas.height;
@@ -1340,11 +1379,11 @@
                 
             this.player.x = spawnX;
             this.player.y = h - 250;
-            this.player.vx = 0; // CORRECCIÓN 1: Eliminar inercia lateral residual
+            this.player.vx = 0;
             this.player.vy = -10;
             this.player.jumpCount = 0;
             
-            this.keys = {}; // CORRECCIÓN 1: Limpiar teclas presionadas que pudieran quedar "pegadas"
+            this.keys = {}; 
             
             this.enemies = [];
             this.projectiles = [];
