@@ -155,7 +155,7 @@
             <div class="logo">NEON<br>JUMPER</div>
             <div class="subtitle">⚡ 8-BIT ⚡</div>
             <div class="stats">
-                <div>🏆 <span id="menuBest">0</span></div>
+                <div> <span id="menuBest">0</span></div>
                 <div>🎮 <span id="menuGames">0</span></div>
                 <div id="vipMenuStat" style="display:none;">⭐ VIP</div>
             </div>
@@ -168,7 +168,7 @@
             <button class="btn btn-secondary" onclick="ui.showShop()" id="btnShop"> TIENDA</button>
             <button class="btn btn-gold" onclick="ui.showCharacters()" id="btnChars">👤 PERSONAJES</button>
             <button class="btn" onclick="ui.showLevels()" id="btnWall">🎨 NIVELES</button>
-            <button class="btn" onclick="ui.showEarn()" id="btnEarn">🎁 OBTENER MONEDAS</button>
+            <button class="btn" onclick="ui.showEarn()" id="btnEarn"> OBTENER MONEDAS</button>
             <button class="btn" style="background:#ffd700; color:#000;" onclick="ui.showPass()" id="btnPass">⭐ PASE VIP</button>
         </div>
     </div>
@@ -219,7 +219,7 @@
                 <div class="luxbox-chest" id="luxboxChest"><img src="" alt="Cofre" id="luxboxImg"></div>
                 <div class="luxbox-light" id="luxboxLight"></div>
                 <div class="luxbox-reward" id="luxboxReward" style="display:none;">
-                    <div class="luxbox-reward-icon" id="luxboxIcon">🎉</div>
+                    <div class="luxbox-reward-icon" id="luxboxIcon"></div>
                     <div class="luxbox-reward-text" id="luxboxText">Cargando...</div>
                 </div>
             </div>
@@ -255,7 +255,7 @@
             <button class="btn" onclick="game.reviveWithAd()" id="btnRevive" style="background:#00ff00;">📺 REVIVIR (1x)</button>
             <div style="font-size:0.5em; color:#888; margin:10px;">(<span id="revivesLeft">5</span>/5 hoy)</div>
             <button class="btn" onclick="game.start()">🔄 REINTENTAR</button>
-            <button class="btn btn-secondary" onclick="ui.showMenu()">🏠 MENÚ</button>
+            <button class="btn btn-secondary" onclick="ui.showMenu()"> MENÚ</button>
         </div>
     </div>
 
@@ -291,7 +291,7 @@
     <!-- OBTENER MONEDAS -->
     <div class="ui-screen" id="earnScreen">
         <div class="panel" id="earnPanel">
-            <h2 id="earnTitle">🎁 OBTENER MONEDAS GRATIS</h2>
+            <h2 id="earnTitle"> OBTENER MONEDAS GRATIS</h2>
             <div class="earn-grid">
                 <div class="earn-card">
                     <div class="title" id="earnAdTitle">📺 ANUNCIO (+200)</div>
@@ -318,8 +318,8 @@
     // ============================================================
     const LANG = {
         es: {
-            btnPlay: '▶ JUGAR', btnShop: ' TIENDA', btnChars: '👤 PERSONAJES',
-            btnWall: '🎨 NIVELES', btnEarn: '🎁 OBTENER MONEDAS', btnPass: '⭐ PASE VIP',
+            btnPlay: '▶ JUGAR', btnShop: ' TIENDA', btnChars: ' PERSONAJES',
+            btnWall: ' NIVELES', btnEarn: '🎁 OBTENER MONEDAS', btnPass: '⭐ PASE VIP',
             shopTitle: 'TIENDA', shopBack: '← VOLVER',
             charsTitle: 'PERSONAJES', charsBack: '← VOLVER',
             wallTitle: '🎨 NIVELES DE DIFICULTAD', wallSub: 'Selecciona tu nivel. ¡A mayor dificultad, mayor recompensa!', wallBack: '← VOLVER',
@@ -328,7 +328,7 @@
             earnTitle: '🎁 OBTENER MONEDAS GRATIS',
             earnAdTitle: '📺 ANUNCIO (+200)',
             earnAdDesc: 'Mira un anuncio y gana 200 monedas',
-            earnRefTitle: '👥 INVITAR AMIGOS',
+            earnRefTitle: ' INVITAR AMIGOS',
             earnRefDesc: 'Invita a un amigo. Cuando juegue 5 partidas y vea 2 anuncios → +300 monedas para ti.',
             adCounter: 'Restantes: <span id="ads200Left">3</span>/3 hoy',
             refStatus: 'Amigos recompensados: <span id="refCount">0</span>',
@@ -362,11 +362,11 @@
             refStatus: 'Friends rewarded: <span id="refCount">0</span>',
             earnBack: '← BACK',
             btnAd200: 'WATCH AD',
-            btnShareRef: '📤 SHARE',
+            btnShareRef: ' SHARE',
             refCodeLabel: 'Code: ',
             reviveBtn: '📺 REVIVE (1x)',
-            retryBtn: '🔄 RETRY',
-            menuBtn: '🏠 MENU',
+            retryBtn: ' RETRY',
+            menuBtn: ' MENU',
             coinLabel: '●', diamondLabel: '♦', starsLabel: '⭐',
             locked: '🔒 Chests',
             vipWeekly: 'Weekly VIP',
@@ -601,7 +601,9 @@
         _tankShield: false, _vipRevive: false, _vipPassActive: false,
         _agileBoost: false, _vipX2: false, _extraLife: false, _extraLifeUsed: false,
         _passiveShieldUsed: false, _vipReviveUsed: false,
-        isDead: false, // CORRECCIÓN: Bandera para evitar conflictos en Game Over
+        _deathX: null, _deathY: null,
+        _difficultyBase: 0, // CORRECCIÓN: punto de score desde el cual se cuenta la dificultad
+        isDead: false,
         levelConfig: LEVEL_CONFIG[1],
         
         init() {
@@ -702,13 +704,16 @@
             this._vipX2 = this._vipPassActive;
             
             this.running = true; 
-            this.isDead = false; // CORRECCIÓN: Resetear estado de muerte
-            this.score = 0; this.coins = 0; this.camera = 0; this.difficulty = 1;
+            this.isDead = false;
+            this.score = 0; this.coins = 0; this.camera = 0;
             this.platforms = []; this.coins_list = []; this.enemies = []; this.projectiles = []; this.particles = [];
             this.shieldActive = false; this.shieldTime = 0; this.nextPlatformSafe = false;
             this.activePowerups = {}; this.powerupTimers = {};
             this.availablePowerups = [...state.inventory];
             state.adsUsedInGame = 0;
+            this._deathX = null; this._deathY = null;
+            this._difficultyBase = 0; // CORRECCIÓN: al iniciar, dificultad cuenta desde 0
+            this.difficulty = 1.0; // CORRECCIÓN: velocidad inicial = 1.0
             if (this.shieldInterval) clearInterval(this.shieldInterval);
             this.springActive = false; this.doubleJumpActive = false; this.magnetActive = false; this.x2Active = false;
             if (this.springTimer) clearTimeout(this.springTimer);
@@ -754,7 +759,6 @@
                 else if (rand > trapChance) { type = 'trap'; this.nextPlatformSafe = true; }
             }
             
-            // CORRECCIÓN: Lógica de distribución mejorada para evitar agrupación en un solo lado
             const screenWidth = this.canvas.width;
             const margin = screenWidth * 0.05;
             const minW = screenWidth * 0.15;
@@ -766,13 +770,10 @@
             const randomSide = Math.random();
             
             if (centerX < screenWidth * 0.4) {
-                // Si está a la izquierda, forzar a la derecha
                 targetX = (screenWidth * 0.5) + Math.random() * (screenWidth * 0.45 - w);
             } else if (centerX > screenWidth * 0.6) {
-                // Si está a la derecha, forzar a la izquierda
                 targetX = margin + Math.random() * (screenWidth * 0.45 - w);
             } else {
-                // Si está en el centro, elegir un lado aleatorio
                 if (randomSide > 0.5) {
                     targetX = margin + Math.random() * (screenWidth * 0.4 - w);
                 } else {
@@ -950,28 +951,39 @@
         },
         
         explode() {
-            if (this.isDead) return; // CORRECCIÓN: Prevenir múltiples llamadas
+            if (this.isDead) return;
             this.isDead = true;
             
             if (navigator.vibrate) navigator.vibrate(200);
             if (this._tankShield && !this._passiveShieldUsed) {
                 this._passiveShieldUsed = true;
                 this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h/2, '#00ffff', 20);
+                this.isDead = false;
                 return;
             }
-            if (this._vipPassActive && !this.shieldActive) { this.activateShield(); return; }
+            if (this._vipPassActive && !this.shieldActive) {
+                this.activateShield();
+                this.isDead = false;
+                return;
+            }
             if (this._vipRevive && !this._vipReviveUsed) {
                 this._vipReviveUsed = true; this.running = true; this.player.vy = -10; this.player.y = this.canvas.height - 150;
                 this.activateShield(); setTimeout(() => { this.shieldActive = false; }, 5000);
+                this.isDead = false;
                 return;
             }
             if (this._extraLife && !this._extraLifeUsed) {
                 this._extraLifeUsed = true; this.running = true; this.player.vy = -8; this.player.y = this.canvas.height - 100;
                 this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h/2, '#ff00ff', 30);
+                this.isDead = false;
                 return;
             }
-            if (!this.running) return;
+            if (!this.running) { this.isDead = false; return; }
             const p = this.player;
+
+            this._deathX = p.x;
+            this._deathY = p.y;
+
             const flash = document.getElementById('flash');
             flash.classList.add('active'); setTimeout(() => flash.classList.remove('active'), 200);
             this.canvas.classList.add('canvas-shake'); setTimeout(() => this.canvas.classList.remove('canvas-shake'), 500);
@@ -1010,8 +1022,12 @@
         update() {
             if (!this.running) return;
             const p = this.player;
-            this.difficulty = 1 + Math.floor(this.score / 300);
-            p.gravity = Math.min(0.55, 0.35 + (this.score / 10000));
+            
+            // CORRECCIÓN: dificultad basada en score total, aumentando 0.1 cada 30 puntos
+            const scoreSinceReset = this.score - this._difficultyBase;
+            this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
+            
+            p.gravity = Math.min(0.55, 0.35 + (scoreSinceReset / 10000));
             
             if (this.keys['ArrowLeft'] || this.keys['a']) { p.vx -= 1.2; p.facing = -1; }
             if (this.keys['ArrowRight'] || this.keys['d']) { p.vx += 1.2; p.facing = 1; }
@@ -1135,7 +1151,7 @@
                 if (pa.rotation !== undefined) pa.rotation += pa.rotSpeed || 0;
             });
             
-            if (p.y > this.canvas.height) this.end();
+            if (p.y > this.canvas.height && !this.isDead) this.explode();
             document.getElementById('hudScore').textContent = this.score;
             document.getElementById('hudCoins').textContent = this.coins;
         },
@@ -1244,8 +1260,8 @@
         },
         
         end() {
-            if (!this.isDead) return; // CORRECCIÓN: Solo ejecutar si realmente murió
-            this.isDead = false; // Resetear para la próxima partida
+            if (!this.isDead) return;
+            this.isDead = false;
             this.running = false;
             
             let finalScore = this.score;
@@ -1293,40 +1309,41 @@
             this.isDead = false;
             this.running = true;
             
-            // CORRECCIÓN: Mantener la dificultad exacta correspondiente al score actual
-            this.difficulty = 1 + Math.floor(this.score / 300);
+            // CORRECCIÓN: al revivir, la dificultad baja un nivel (equivalente a restar 30 al score)
+            this._difficultyBase = Math.max(0, this.score - 30);
+            // La dificultad se recalculará en el próximo update()
             
-            // Reposicionar al jugador de forma segura
-            this.player.x = this.canvas.width / 2 - 20;
-            this.player.y = this.canvas.height - 250; // Un poco más arriba para dar tiempo de reacción
-            this.player.vx = 0;
-            this.player.vy = -10; // Impulso controlado, no excesivo
-            this.player.jumpCount = 0;
-            
-            // Limpiar amenazas cercanas
-            this.enemies = this.enemies.filter(en => en.y < this.canvas.height / 2);
-            this.projectiles = [];
-            
-            // CORRECCIÓN: Generar 3 plataformas de rescate perfectamente distribuidas
             const w = this.canvas.width;
             const h = this.canvas.height;
+            const spawnX = (this._deathX !== null && this._deathX !== undefined)
+                ? Math.max(20, Math.min(this._deathX, w - this.player.w - 20))
+                : (w / 2 - 20);
+            this.player.x = spawnX;
+            this.player.y = h - 250;
+            this.player.vx = 0;
+            this.player.vy = -10;
+            this.player.jumpCount = 0;
+            
+            this.enemies = [];
+            this.projectiles = [];
+            
+            const platCenterX = Math.max(w * 0.20, Math.min(spawnX, w * 0.80));
             this.platforms.push({
-                x: w * 0.35, y: h - 80, w: w * 0.30, h: 20, type: 'normal',
-                vx: 0, originX: w * 0.35, moveRange: 0, standTime: 0, falling: false,
+                x: Math.max(0, Math.min(platCenterX - w * 0.15, w - w * 0.30)), y: h - 80, w: w * 0.30, h: 20, type: 'normal',
+                vx: 0, originX: platCenterX - w * 0.15, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             this.platforms.push({
-                x: w * 0.10, y: h - 180, w: w * 0.30, h: 20, type: 'normal',
+                x: Math.max(0, w * 0.10), y: h - 180, w: w * 0.30, h: 20, type: 'normal',
                 vx: 0, originX: w * 0.10, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             this.platforms.push({
-                x: w * 0.60, y: h - 180, w: w * 0.30, h: 20, type: 'normal',
+                x: Math.min(w * 0.60, w - w * 0.30), y: h - 180, w: w * 0.30, h: 20, type: 'normal',
                 vx: 0, originX: w * 0.60, moveRange: 0, standTime: 0, falling: false,
                 hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             
-            // Activar escudo temporal de 5 segundos
             this.shieldActive = true;
             this.shieldTime = 5;
             document.getElementById('shieldIndicator').classList.add('active');
@@ -1433,7 +1450,7 @@
                 } else {
                     const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
                     state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
-                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
+                    reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '' };
                 }
             } else if (type === 'silver') {
                 if (rand < 65) {
@@ -1455,7 +1472,7 @@
             } else if (type === 'gold') {
                 if (rand < 50) {
                     const amount = Math.floor(Math.random() * 181) + 100;
-                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
+                    state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '' };
                 } else if (rand < 80) {
                     const powerup = POWERUPS[Math.floor(Math.random() * POWERUPS.length)];
                     state.inventory.push(powerup.key); localStorage.setItem('nj_inventory', JSON.stringify(state.inventory));
@@ -1702,7 +1719,7 @@
                 const isLocked = (i === 3 || i === 4) && !vipActive;
                 if (isLocked) {
                     card.classList.add('locked');
-                    const lock = document.createElement('span'); lock.className = 'lock-icon'; lock.textContent = '🔒';
+                    const lock = document.createElement('span'); lock.className = 'lock-icon'; lock.textContent = '';
                     card.appendChild(lock);
                 }
                 if (state.wallpaper === i) card.classList.add('selected');
@@ -1822,7 +1839,6 @@
     window.onload = async () => {
         game.init();
         
-        // CORRECCIÓN: Esperar a que todas las imágenes carguen antes de mostrar el menú
         await ImageLoader.loadAll();
         
         document.getElementById('loading').style.display = 'none';
