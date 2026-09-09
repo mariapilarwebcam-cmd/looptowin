@@ -15,10 +15,12 @@
         .ui-screen.active { display:flex; animation:fadeIn 0.3s steps(4); }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         .panel { background:rgba(26,26,46,0.95); border:4px solid #00ff00; padding:15px 12px; max-width:95%; width:400px; text-align:center; box-shadow:0 0 30px rgba(0,255,0,0.3),8px 8px 0 #000; max-height:90vh; overflow:hidden; position:relative; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-        .shop-panel { overflow-y:auto; justify-content:flex-start; padding:20px 15px; max-height:85vh; }
+        
+        .shop-panel { overflow-y:auto; justify-content:flex-start; padding:20px 15px; max-height:85vh; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
         .shop-panel::-webkit-scrollbar { width:6px; }
         .shop-panel::-webkit-scrollbar-track { background:rgba(0,0,0,0.5); border-radius:10px; }
         .shop-panel::-webkit-scrollbar-thumb { background:#00ff00; border-radius:10px; }
+        
         .panel::before { content:''; position:absolute; top:-2px; left:-2px; right:-2px; bottom:-2px; background:linear-gradient(45deg,#00ff00,#00ffff,#ff00ff,#00ff00); background-size:300% 300%; z-index:-1; border-radius:10px; animation:borderGlow 4s ease infinite; }
         @keyframes borderGlow { 0% { background-position:0% 50%; } 50% { background-position:100% 50%; } 100% { background-position:0% 50%; } }
         .logo { font-size:1.2em; color:#00ff00; margin-bottom:6px; text-shadow:0 0 20px #00ff00,0 0 40px #00ff00,4px 4px 0 #005500; line-height:1.2; animation:logoPulse 2s ease-in-out infinite; }
@@ -79,7 +81,9 @@
         .particle { position:absolute; width:8px; height:8px; background:#ffd700; pointer-events:none; opacity:0; }
         .particle.animate { animation:particleFly 2s ease-out forwards; }
         @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
-        .character-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(65px,1fr)); gap:10px; margin:20px 0; max-height:45vh; overflow-y:auto; padding:5px; }
+        
+        .character-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(65px,1fr)); gap:10px; margin:20px 0; max-height:45vh; overflow-y:auto; padding:5px; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+        
         .char-card { aspect-ratio:1; background:#000; border:3px solid #333; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:5px; cursor:pointer; border-radius:4px; }
         .char-card img { width:70%; height:70%; object-fit:contain; }
         .char-card.unlocked { border-color:#00ff00; }
@@ -125,7 +129,8 @@
         .earn-card .title { font-size:0.8em; color:#ffd700; margin-bottom:10px; }
         .earn-card .desc { font-size:0.4em; color:#aaa; margin-bottom:10px; }
         .referral-code { font-size:0.6em; color:#00ffff; background:#000; padding:5px 10px; border-radius:4px; margin:10px 0; display:inline-block; }
-        .friend-list { font-size:0.35em; color:#aaa; max-height:100px; overflow-y:auto; }
+        
+        .friend-list { font-size:0.35em; color:#aaa; max-height:100px; overflow-y:auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
     </style>
 </head>
 <body>
@@ -746,28 +751,22 @@
                 else if (rand > trapChance) { type = 'trap'; this.nextPlatformSafe = true; }
             }
             
-            // LÓGICA MEJORADA PARA CUBRIR TODA LA PANTALLA CON HUECOS JUGABLES
             const screenWidth = this.canvas.width;
-            // El jugador puede recorrer aprox 160px en el aire horizontalmente a velocidad máxima
             const maxReach = Math.min(160, screenWidth * 0.35); 
             const margin = 20;
             
             const centerX = highestPlat.x + highestPlat.w / 2;
             
-            // Decidir si saltamos a la izquierda o derecha, o si usamos el wrap-around de la pantalla
-            // Para cubrir toda la pantalla, a veces forzamos un salto hacia el lado opuesto si estamos muy cerca de un borde
             let targetX = centerX;
             if (centerX < screenWidth * 0.3) {
                 targetX = centerX + (maxReach * 0.6) + Math.random() * (maxReach * 0.4);
             } else if (centerX > screenWidth * 0.7) {
                 targetX = centerX - (maxReach * 0.6) - Math.random() * (maxReach * 0.4);
             } else {
-                // Estamos en el medio, podemos ir a cualquier lado dentro del alcance
                 const dir = Math.random() > 0.5 ? 1 : -1;
                 targetX = centerX + dir * (40 + Math.random() * (maxReach - 40));
             }
             
-            // Ancho de la plataforma adaptativo al dispositivo
             let w;
             if (safeJump) {
                 w = Math.min(120, Math.max(80, screenWidth * 0.25));
@@ -777,7 +776,6 @@
                 w = Math.min(80, Math.max(60, screenWidth * 0.15));
             }
             
-            // Asegurar que la plataforma esté dentro de los límites de la pantalla
             const x = Math.max(margin, Math.min(targetX - w/2, screenWidth - w - margin));
             
             this.platforms.push({
@@ -793,7 +791,6 @@
                 this.coins_list.push({ x: x + w/2 - 10, y: newY - 35, w: 20, h: 20, collected: false, floatOffset: Math.random() * Math.PI * 2 });
             }
             
-            // LÓGICA DE GENERACIÓN DE ENEMIGOS MEJORADA CON MULTIPLICADOR DE NIVEL
             if (this.score > 60) {
                 const diffMult = this.levelConfig.diff;
                 const spawnChance = (0.30 + (this.difficulty * 0.15)) * diffMult;
@@ -1014,7 +1011,6 @@
             
             p.vx *= 0.88; p.vx = Math.max(-8, Math.min(8, p.vx));
             p.x += p.vx;
-            // Wrap-around para desplazarse por toda la pantalla
             if (p.x + p.w < 0) p.x = this.canvas.width;
             if (p.x > this.canvas.width) p.x = -p.w;
             
@@ -1241,6 +1237,7 @@
         },
         
         end() {
+            if (this.running) return; // CORRECCIÓN: Si se revivió, no mostrar Game Over de nuevo
             this.running = false;
             let finalScore = this.score;
             if (this._scoreMultiplier > 1.0) finalScore = Math.floor(finalScore * this._scoreMultiplier);
@@ -1275,11 +1272,66 @@
         reviveWithAd() {
             if (state.adsToday >= 5) { alert('Limite de 5 anuncios diarios alcanzado.'); return; }
             if (state.adsUsedInGame >= 1) { alert('Solo 1 revive por partida.'); return; }
-            state.adsToday++; state.adsUsedInGame++;
+            
+            // Aquí iría la lógica real de mostrar el anuncio. Asumimos que se completa con éxito.
+            state.adsToday++; 
+            state.adsUsedInGame++;
             localStorage.setItem('nj_adsToday', state.adsToday);
             this.save();
+            
             document.getElementById('gameOverScreen').classList.remove('active');
-            this.activateShield(); this.start();
+            document.getElementById('hud').classList.add('active');
+            
+            // 1. Reposicionar al jugador en un lugar seguro
+            this.player.x = this.canvas.width / 2 - 20;
+            this.player.y = this.canvas.height - 200;
+            this.player.vx = 0;
+            this.player.vy = -8; // Pequeño impulso hacia arriba
+            this.player.jumpCount = 0;
+            
+            // 2. Limpiar amenazas cercanas (mitad inferior de la pantalla) para dar un respiro
+            this.enemies = this.enemies.filter(en => en.y < this.canvas.height / 2);
+            this.projectiles = []; // Limpiar todos los proyectiles
+            
+            // 3. Generar plataformas de rescate seguras en la parte inferior
+            const w = this.canvas.width;
+            const h = this.canvas.height;
+            this.platforms.push({
+                x: w * 0.2, y: h - 50, w: w * 0.6, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.2, moveRange: 0, standTime: 0, falling: false,
+                hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
+            });
+            this.platforms.push({
+                x: w * 0.1, y: h - 150, w: w * 0.35, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.1, moveRange: 0, standTime: 0, falling: false,
+                hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
+            });
+            this.platforms.push({
+                x: w * 0.55, y: h - 150, w: w * 0.35, h: 20, type: 'normal',
+                vx: 0, originX: w * 0.55, moveRange: 0, standTime: 0, falling: false,
+                hasSpikes: false, spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
+            });
+            
+            // 4. Activar escudo temporal de 5 segundos (inmunidad)
+            this.shieldActive = true;
+            this.shieldTime = 5;
+            document.getElementById('shieldIndicator').classList.add('active');
+            document.getElementById('shieldTime').textContent = this.shieldTime;
+            if (this.shieldInterval) clearInterval(this.shieldInterval);
+            this.shieldInterval = setInterval(() => {
+                this.shieldTime--;
+                document.getElementById('shieldTime').textContent = this.shieldTime;
+                if (this.shieldTime <= 0) {
+                    this.shieldActive = false;
+                    clearInterval(this.shieldInterval);
+                    document.getElementById('shieldIndicator').classList.remove('active');
+                }
+            }, 1000);
+            
+            // 5. Reanudar el juego manteniendo el score y monedas actuales
+            this.running = true;
+            this.updatePowerupBar();
+            this.loop();
         },
         
         watchAd200() {
