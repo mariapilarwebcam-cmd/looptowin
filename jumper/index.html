@@ -15,7 +15,6 @@
         .ui-screen.active { display:flex; animation:fadeIn 0.3s steps(4); }
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
         
-        /* CORRECCIÓN 1: Panel base vuelve a overflow: hidden para no romper otros menús */
         .panel { 
             background:rgba(26,26,46,0.95); 
             border:4px solid #00ff00; 
@@ -34,7 +33,6 @@
             justify-content: flex-start; 
         }
         
-        /* CORRECCIÓN 2: Forzar comportamiento de scroll táctil en áreas específicas */
         .shop-panel, 
         .character-grid, 
         .friend-list {
@@ -44,7 +42,6 @@
             overscroll-behavior: contain !important;
         }
 
-        /* CORRECCIÓN 3: Permitir scroll en los hijos de estas áreas (evita que el selector * lo bloquee) */
         .shop-panel *, 
         .character-grid *, 
         .friend-list * {
@@ -646,7 +643,9 @@
         _passiveShieldUsed: false, _vipReviveUsed: false,
         _deathX: null, _deathY: null,
         _difficultyBase: 0,
-        _loopGen: 0, // CORRECCIÓN: Blindaje contra bucles duplicados
+        _loopGen: 0,
+        _jetpackActive: false, // CORRECCIÓN: Estado del Jetpack
+        _jetpackTargetScore: 0,
         isDead: false,
         levelConfig: LEVEL_CONFIG[1],
         
@@ -725,7 +724,7 @@
         },
         
         start() {
-            this._loopGen++; // CORRECCIÓN: Invalidar bucles anteriores
+            this._loopGen++;
             if (this.animationId) cancelAnimationFrame(this.animationId);
             
             const charName = state.selected;
@@ -759,6 +758,9 @@
             this._deathX = null; this._deathY = null;
             this._difficultyBase = 0;
             this.difficulty = 1.0;
+            this._jetpackActive = false; // CORRECCIÓN: Reiniciar estado del jetpack
+            this._jetpackTargetScore = 0;
+            
             if (this.shieldInterval) clearInterval(this.shieldInterval);
             this.springActive = false; this.doubleJumpActive = false; this.magnetActive = false; this.x2Active = false;
             if (this.springTimer) clearTimeout(this.springTimer);
@@ -910,25 +912,30 @@
             switch(key) {
                 case 'shield': this.activateShield(); break;
                 case 'jetpack':
-                    this.player.vy = -15; this.score += 100;
+                    // CORRECCIÓN: Lógica del Jetpack basada en el nivel del personaje
+                    const charLevel = getEffectiveLevel(state.selected);
+                    const boost = Math.min(100, 50 + (charLevel * 10)); // Nivel 0/1=50, sube 10 por nivel hasta 100
+                    this._jetpackActive = true;
+                    this._jetpackTargetScore = this.score + boost;
+                    this.player.vy = -15;
                     this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h, '#ff8800', 20);
                     break;
                 case 'magnet':
                     this.magnetActive = true;
-                    setTimeout(() => { this.magnetActive = false; }, (this._magnetDuration > 0 ? this._magnetDuration : 8) * 1000);
+                    setTimeout(() => { this.magnetActive = false; }, 30000); // CORRECCIÓN: 30 segundos
                     break;
                 case 'x2':
                     this.x2Active = true;
-                    setTimeout(() => { this.x2Active = false; }, 10000);
+                    setTimeout(() => { this.x2Active = false; }, 30000); // CORRECCIÓN: 30 segundos
                     break;
                 case 'spring':
                     this.springActive = true;
                     if (this.springTimer) clearTimeout(this.springTimer);
-                    this.springTimer = setTimeout(() => { this.springActive = false; }, 15000);
+                    this.springTimer = setTimeout(() => { this.springActive = false; }, 30000); // CORRECCIÓN: 30 segundos
                     break;
                 case 'double_jump':
                     this.player.doubleJump = true; this.player.jumpCount = 0;
-                    setTimeout(() => { this.player.doubleJump = false; }, 15000);
+                    setTimeout(() => { this.player.doubleJump = false; }, 30000); // CORRECCIÓN: 30 segundos
                     break;
             }
             this.updatePowerupBar();
@@ -1067,8 +1074,6 @@
         },
         
         update() {
-            // CORRECCIÓN: Las partículas SIEMPRE deben decaer, incluso con running=false,
-            // para que el loop() sepa que puede detenerse solo.
             this.particles.forEach(pa => {
                 pa.x += pa.vx; pa.y += pa.vy; pa.vy += 0.2; pa.life -= 0.04; pa.size *= 0.95;
                 if (pa.rotation !== undefined) pa.rotation += pa.rotSpeed || 0;
@@ -1078,6 +1083,18 @@
             if (!this.running) return;
             
             const p = this.player;
+            
+            // CORRECCIÓN: Animación y lógica de impulso del Jetpack
+            if (this._jetpackActive) {
+                p.vy = -15; // Impulso continuo hacia arriba
+                if (Math.random() > 0.5) {
+                    this.createParticles(p.x + p.w/2, p.y + p.h, '#ff8800', 2);
+                }
+                if (this.score >= this._jetpackTargetScore) {
+                    this._jetpackActive = false;
+                }
+            }
+
             const scoreSinceReset = this.score - this._difficultyBase;
             this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
             
@@ -1123,7 +1140,6 @@
             this.coins_list = this.coins_list.filter(c => c.y < this.canvas.height + 100 && !c.collected);
             this.enemies = this.enemies.filter(en => en.y < this.canvas.height + 100);
             this.projectiles = this.projectiles.filter(pr => pr.y < this.canvas.height + 100 && pr.y > -200 && pr.life > 0);
-            // (Eliminado filtro duplicado de partículas)
             
             if (p.vy > 0) {
                 this.platforms.forEach(pl => {
@@ -1141,7 +1157,10 @@
                             if (pl.standTime > 0.8) pl.warning = true;
                             if (pl.standTime > 1.2) { pl.falling = true; pl.vy = 5; }
                         } else if (pl.type === 'fragile') {
-                            pl.falling = true; p.y = pl.y - p.h; p.vy = this.springActive ? -18 : p.jumpPower * 0.75;
+                            // CORRECCIÓN: Mismo impulso que las plataformas normales antes de destruirse
+                            pl.falling = true; 
+                            p.y = pl.y - p.h; 
+                            p.vy = this.springActive ? -18 : p.jumpPower; 
                             this.createParticles(p.x + p.w/2, p.y + p.h, '#ff4444', 8);
                         } else {
                             p.y = pl.y - p.h; p.vy = this.springActive ? -18 : p.jumpPower;
@@ -1199,8 +1218,6 @@
                     if (!this.shieldActive) this.explode();
                 }
             });
-            
-            // (Eliminado segundo forEach de partículas duplicado)
             
             if (p.y > this.canvas.height && !this.isDead) this.explode();
             document.getElementById('hudScore').textContent = this.score;
@@ -1304,7 +1321,7 @@
         },
         
         loop() {
-            const myGen = this._loopGen; // CORRECCIÓN: Blindaje contra bucles duplicados
+            const myGen = this._loopGen;
             if (this.running || this.particles.length > 0) {
                 this.update(); this.draw();
                 this.animationId = requestAnimationFrame(() => {
@@ -1357,7 +1374,7 @@
             localStorage.setItem('nj_adsToday', state.adsToday);
             this.save();
             
-            this._loopGen++; // CORRECCIÓN: Invalidar bucles anteriores
+            this._loopGen++;
             if (this.animationId) cancelAnimationFrame(this.animationId);
             
             document.getElementById('gameOverScreen').classList.remove('active');
@@ -1366,7 +1383,6 @@
             this.isDead = false;
             this.running = true;
             
-            // CORRECCIÓN: Retroceder un escalón de dificultad, no resetear a 1.0
             this._difficultyBase = (this._difficultyBase || 0) + 30;
             const scoreSinceReset = Math.max(0, this.score - this._difficultyBase);
             this.difficulty = 1.0 + Math.floor(scoreSinceReset / 30) * 0.1;
