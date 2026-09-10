@@ -114,10 +114,11 @@
         .particle.animate { animation:particleFly 2s ease-out forwards; }
         @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
         
+        /* MEJORA: Personajes un poco más grandes */
         .character-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); 
-            gap: 10px; 
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); /* Aumentado de 65px a 85px */
+            gap: 12px; 
             margin: 20px 0; 
             max-height: 45vh; 
             padding: 5px; 
@@ -125,7 +126,7 @@
         }
         
         .char-card { aspect-ratio:1; background:#000; border:3px solid #333; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:5px; cursor:pointer; border-radius:4px; }
-        .char-card img { width:70%; height:70%; object-fit:contain; }
+        .char-card img { width:85%; height:85%; object-fit:contain; } /* Aumentado de 70% a 85% */
         .char-card.unlocked { border-color:#00ff00; }
         .char-card.selected { border-color:#ffd700; box-shadow:0 0 10px #ffd700; }
         .char-card.locked { opacity:0.4; }
@@ -227,7 +228,7 @@
                     <div class="chest-info">
                         <div class="chest-title"> COFRE BRONCE</div>
                         <div class="chest-price">100 ●</div>
-                        <div class="chest-desc">80% Monedas (10-40)<br>20% Power-up</div>
+                        <div class="chest-desc">75% Monedas<br>25% Power-up</div>
                     </div>
                 </div>
                 <div class="chest-item silver" onclick="shop.open('silver')">
@@ -235,7 +236,7 @@
                     <div class="chest-info">
                         <div class="chest-title"> COFRE PLATA</div>
                         <div class="chest-price">300 ●</div>
-                        <div class="chest-desc">65% Monedas (30-105)<br>25% Power-up<br>10% Personaje</div>
+                        <div class="chest-desc">55% Monedas<br>35% Power-up<br>10% Personaje</div>
                     </div>
                 </div>
                 <div class="chest-item gold" onclick="shop.open('gold')">
@@ -243,7 +244,15 @@
                     <div class="chest-info">
                         <div class="chest-title"> COFRE ORO</div>
                         <div class="chest-price">800 ●</div>
-                        <div class="chest-desc">50% Monedas (100-280)<br>30% Power-up<br>15% Personaje<br>5% Diamantes</div>
+                        <div class="chest-desc">40% Monedas<br>40% Power-up<br>15% Personaje<br>5% Diamantes</div>
+                    </div>
+                </div>
+                <div class="chest-item" onclick="shop.buyDiamondPack()" style="border-color:#00ffff; box-shadow:0 0 30px rgba(0,255,255,0.6); background:linear-gradient(135deg,#0a2a2a 0%,#051515 100%);">
+                    <div class="chest-display" style="font-size:4em; display:flex; align-items:center; justify-content:center;">💎</div>
+                    <div class="chest-info">
+                        <div class="chest-title">PACK DIAMANTES</div>
+                        <div class="chest-price" style="color:#00ffff;">200 ♦</div>
+                        <div class="chest-desc">Compra directa<br>50 ⭐</div>
                     </div>
                 </div>
             </div>
@@ -644,7 +653,7 @@
         _deathX: null, _deathY: null,
         _difficultyBase: 0,
         _loopGen: 0,
-        _jetpackActive: false, // CORRECCIÓN: Estado del Jetpack
+        _jetpackActive: false,
         _jetpackTargetScore: 0,
         isDead: false,
         levelConfig: LEVEL_CONFIG[1],
@@ -758,7 +767,7 @@
             this._deathX = null; this._deathY = null;
             this._difficultyBase = 0;
             this.difficulty = 1.0;
-            this._jetpackActive = false; // CORRECCIÓN: Reiniciar estado del jetpack
+            this._jetpackActive = false;
             this._jetpackTargetScore = 0;
             
             if (this.shieldInterval) clearInterval(this.shieldInterval);
@@ -837,11 +846,13 @@
                 vx: type === 'moving' ? (Math.random() > 0.5 ? 2 : -2) : 0,
                 originX: x, moveRange: Math.min(60, screenWidth * 0.15),
                 standTime: 0, falling: false,
-                hasSpikes: type === 'trap' && Math.random() > 0.5,
+                hasSpikes: type === 'trap',
                 spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             
-            if (Math.random() < 0.3 && type !== 'trap') {
+            // MEJORA: A mayor dificultad, más probabilidad de que aparezcan monedas (de 30% hasta 70%)
+            const coinSpawnChance = 0.30 + (difficultyFactor * 0.40);
+            if (Math.random() < coinSpawnChance && type !== 'trap') {
                 this.coins_list.push({ x: x + w/2 - 10, y: newY - 35, w: 20, h: 20, collected: false, floatOffset: Math.random() * Math.PI * 2 });
             }
             
@@ -912,9 +923,8 @@
             switch(key) {
                 case 'shield': this.activateShield(); break;
                 case 'jetpack':
-                    // CORRECCIÓN: Lógica del Jetpack basada en el nivel del personaje
                     const charLevel = getEffectiveLevel(state.selected);
-                    const boost = Math.min(100, 50 + (charLevel * 10)); // Nivel 0/1=50, sube 10 por nivel hasta 100
+                    const boost = Math.min(100, 50 + (charLevel * 10));
                     this._jetpackActive = true;
                     this._jetpackTargetScore = this.score + boost;
                     this.player.vy = -15;
@@ -922,20 +932,20 @@
                     break;
                 case 'magnet':
                     this.magnetActive = true;
-                    setTimeout(() => { this.magnetActive = false; }, 30000); // CORRECCIÓN: 30 segundos
+                    setTimeout(() => { this.magnetActive = false; }, 30000);
                     break;
                 case 'x2':
                     this.x2Active = true;
-                    setTimeout(() => { this.x2Active = false; }, 30000); // CORRECCIÓN: 30 segundos
+                    setTimeout(() => { this.x2Active = false; }, 30000);
                     break;
                 case 'spring':
                     this.springActive = true;
                     if (this.springTimer) clearTimeout(this.springTimer);
-                    this.springTimer = setTimeout(() => { this.springActive = false; }, 30000); // CORRECCIÓN: 30 segundos
+                    this.springTimer = setTimeout(() => { this.springActive = false; }, 30000);
                     break;
                 case 'double_jump':
                     this.player.doubleJump = true; this.player.jumpCount = 0;
-                    setTimeout(() => { this.player.doubleJump = false; }, 30000); // CORRECCIÓN: 30 segundos
+                    setTimeout(() => { this.player.doubleJump = false; }, 30000);
                     break;
             }
             this.updatePowerupBar();
@@ -1084,9 +1094,8 @@
             
             const p = this.player;
             
-            // CORRECCIÓN: Animación y lógica de impulso del Jetpack
             if (this._jetpackActive) {
-                p.vy = -15; // Impulso continuo hacia arriba
+                p.vy = -15;
                 if (Math.random() > 0.5) {
                     this.createParticles(p.x + p.w/2, p.y + p.h, '#ff8800', 2);
                 }
@@ -1157,7 +1166,6 @@
                             if (pl.standTime > 0.8) pl.warning = true;
                             if (pl.standTime > 1.2) { pl.falling = true; pl.vy = 5; }
                         } else if (pl.type === 'fragile') {
-                            // CORRECCIÓN: Mismo impulso que las plataformas normales antes de destruirse
                             pl.falling = true; 
                             p.y = pl.y - p.h; 
                             p.vy = this.springActive ? -18 : p.jumpPower; 
@@ -1177,13 +1185,13 @@
                 }
                 if (pl.type === 'trap' && !pl.falling && pl.hasSpikes) {
                     pl.spikeTimer += 1/60;
-                    if (pl.spikeState === 0 && pl.spikeTimer > 0.8) { pl.spikeState = 1; pl.spikeTimer = 0; }
+                    if (pl.spikeState === 0 && pl.spikeTimer > 0.6) { pl.spikeState = 1; pl.spikeTimer = 0; }
                     else if (pl.spikeState === 1) {
-                        pl.blinkOn = Math.floor(pl.spikeTimer / 0.12) % 2 === 0;
-                        if (pl.spikeTimer > 0.4) { pl.spikeState = 2; pl.spikeTimer = 0; }
+                        pl.blinkOn = Math.floor(pl.spikeTimer / 0.1) % 2 === 0;
+                        if (pl.spikeTimer > 0.5) { pl.spikeState = 2; pl.spikeTimer = 0; }
                     } else if (pl.spikeState === 2) {
                         pl.animFrame = Math.floor(pl.spikeTimer / 0.15) % 2;
-                        if (pl.spikeTimer > 0.6) { pl.spikeState = 0; pl.spikeTimer = 0; }
+                        if (pl.spikeTimer > 0.8) { pl.spikeState = 0; pl.spikeTimer = 0; }
                     }
                 }
                 if (pl.falling) { pl.y += pl.vy; pl.vy += 0.3; }
@@ -1194,9 +1202,11 @@
                 const floatY = Math.sin(c.floatOffset) * 4;
                 if (!c.collected && p.x < c.x + c.w && p.x + p.w > c.x && p.y < c.y + c.h + floatY && p.y + p.h > c.y + floatY) {
                     c.collected = true;
+                    // MEJORA: Valor aleatorio entre 1 y 7, multiplicado por los bonus activos
+                    const baseCoinValue = Math.floor(Math.random() * 7) + 1;
                     let bonus = this.x2Active ? 2 : 1;
                     if (this._vipX2) bonus *= 2;
-                    this.coins += bonus;
+                    this.coins += (baseCoinValue * bonus);
                     this.createParticles(c.x + 10, c.y + 10, '#ffd700', 8);
                 }
             });
@@ -1521,7 +1531,7 @@
             const rand = Math.random() * 100;
             let reward;
             if (type === 'bronze') {
-                if (rand < 80) {
+                if (rand < 75) {
                     const amount = Math.floor(Math.random() * 31) + 10;
                     state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
                 } else {
@@ -1530,7 +1540,7 @@
                     reward = { type: 'powerup', text: powerup.name + ' (guardado)', iconKey: powerup.key, emoji: '⚡' };
                 }
             } else if (type === 'silver') {
-                if (rand < 65) {
+                if (rand < 55) {
                     const amount = Math.floor(Math.random() * 76) + 30;
                     state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
                 } else if (rand < 90) {
@@ -1547,7 +1557,7 @@
                     }
                 }
             } else if (type === 'gold') {
-                if (rand < 50) {
+                if (rand < 40) {
                     const amount = Math.floor(Math.random() * 181) + 100;
                     state.coins += amount; reward = { type: 'coins', text: `+${amount} ●`, iconKey: 'coin', emoji: '🪙' };
                 } else if (rand < 80) {
@@ -1581,6 +1591,21 @@
             if (!state.vipPass.active || state.vipPass.expiry <= Date.now()) { alert('Necesitas el Pase VIP activo.'); return; }
             state.lastFreeGold = today; localStorage.setItem('nj_lastFreeGold', today);
             this._isFree = true; this.open('gold');
+        },
+        buyDiamondPack() {
+            if (!window.Telegram || !window.Telegram.WebApp) { alert('Esta función solo está disponible en Telegram Mini App.'); return; }
+            Telegram.WebApp.openInvoice({
+                title: 'Pack de 200 Diamantes',
+                description: 'Obtén 200 diamantes inmediatamente',
+                payload: JSON.stringify({ type: 'diamond_pack', amount: 200 }),
+                currency: 'stars', prices: [{ label: '200 Diamantes', amount: 50 }]
+            }, (status) => {
+                if (status === 'paid') {
+                    state.diamonds += 200;
+                    game.save(); ui.updateCurrency();
+                    alert('¡+200 diamantes!');
+                }
+            });
         }
     };
 
@@ -1635,8 +1660,26 @@
             const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
             const weeklyVIP = getWeeklyVIPList();
             
+            // MEJORA: Separar en desbloqueados y bloqueados para ordenar alfabéticamente por grupos
+            const unlockedChars = [];
+            const lockedChars = [];
+
             ALL_CHARACTERS_RAW.forEach(key => {
-                const card = document.createElement('div');
+                if (isCharacterUnlocked(key)) {
+                    unlockedChars.push(key);
+                } else {
+                    lockedChars.push(key);
+                }
+            });
+
+            // Ordenar alfabéticamente ambos grupos
+            unlockedChars.sort();
+            lockedChars.sort();
+
+            // Combinar: primero los desbloqueados, luego los bloqueados
+            const sortedCharacters = [...unlockedChars, ...lockedChars];
+
+            sortedCharacters.forEach(key => {
                 const unlocked = isCharacterUnlocked(key), selected = state.selected === key;
                 const cls = CHARACTER_CLASSES[key] || 'common', level = getEffectiveLevel(key);
                 const isOwned = state.chars[key] || false, isWeeklyVIP = weeklyVIP.includes(key);
@@ -1687,6 +1730,14 @@
                         vipLabel.textContent = t('vipWeekly'); card.appendChild(vipLabel);
                     }
                 } else {
+                    const buyBtn = document.createElement('button');
+                    buyBtn.className = 'upgrade-btn enabled';
+                    buyBtn.style.background = '#00ffff';
+                    buyBtn.style.color = '#000';
+                    buyBtn.textContent = '♦ 30';
+                    buyBtn.onclick = (e) => { e.stopPropagation(); ui.buyCharacterWithDiamonds(key); };
+                    card.appendChild(buyBtn);
+                    
                     const lockLabel = document.createElement('span'); lockLabel.style.cssText = 'font-size:0.3em; color:#888;';
                     lockLabel.textContent = t('locked'); card.appendChild(lockLabel);
                 }
@@ -1695,6 +1746,15 @@
             });
             document.getElementById('charsTitle').textContent = t('charsTitle');
             document.getElementById('charsBack').textContent = t('charsBack');
+        },
+        buyCharacterWithDiamonds(charName) {
+            const cost = 30;
+            if (state.diamonds < cost) { alert(`Necesitas ${cost} diamantes.`); return; }
+            state.diamonds -= cost;
+            state.chars[charName] = true;
+            if (!state.levels[charName]) state.levels[charName] = 0;
+            game.save(); ui.updateCurrency(); ui.showCharacters();
+            alert(`¡${charName.toUpperCase()} desbloqueado!`);
         },
         upgradeCharacter(charName) {
             const currentLevel = state.levels[charName] || 0;
