@@ -114,10 +114,9 @@
         .particle.animate { animation:particleFly 2s ease-out forwards; }
         @keyframes particleFly { 0% { opacity:1; transform:translate(0,0) scale(1); } 100% { opacity:0; transform:translate(var(--tx),var(--ty)) scale(0); } }
         
-        /* MEJORA: Personajes un poco más grandes */
         .character-grid { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); /* Aumentado de 65px a 85px */
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
             gap: 12px; 
             margin: 20px 0; 
             max-height: 45vh; 
@@ -126,7 +125,7 @@
         }
         
         .char-card { aspect-ratio:1; background:#000; border:3px solid #333; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:5px; cursor:pointer; border-radius:4px; }
-        .char-card img { width:85%; height:85%; object-fit:contain; } /* Aumentado de 70% a 85% */
+        .char-card img { width:85%; height:85%; object-fit:contain; } 
         .char-card.unlocked { border-color:#00ff00; }
         .char-card.selected { border-color:#ffd700; box-shadow:0 0 10px #ffd700; }
         .char-card.locked { opacity:0.4; }
@@ -850,7 +849,6 @@
                 spikeState: 0, spikeTimer: 0, blinkOn: false, animFrame: 0, warning: false
             });
             
-            // MEJORA: A mayor dificultad, más probabilidad de que aparezcan monedas (de 30% hasta 70%)
             const coinSpawnChance = 0.30 + (difficultyFactor * 0.40);
             if (Math.random() < coinSpawnChance && type !== 'trap') {
                 this.coins_list.push({ x: x + w/2 - 10, y: newY - 35, w: 20, h: 20, collected: false, floatOffset: Math.random() * Math.PI * 2 });
@@ -922,7 +920,7 @@
             
             switch(key) {
                 case 'shield': this.activateShield(); break;
-                case 'jetpack':
+                case 'jetpack': {
                     const charLevel = getEffectiveLevel(state.selected);
                     const boost = Math.min(100, 50 + (charLevel * 10));
                     this._jetpackActive = true;
@@ -930,6 +928,7 @@
                     this.player.vy = -15;
                     this.createParticles(this.player.x + this.player.w/2, this.player.y + this.player.h, '#ff8800', 20);
                     break;
+                }
                 case 'magnet':
                     this.magnetActive = true;
                     setTimeout(() => { this.magnetActive = false; }, 30000);
@@ -1187,11 +1186,11 @@
                     pl.spikeTimer += 1/60;
                     if (pl.spikeState === 0 && pl.spikeTimer > 0.6) { pl.spikeState = 1; pl.spikeTimer = 0; }
                     else if (pl.spikeState === 1) {
-                        pl.blinkOn = Math.floor(pl.spikeTimer / 0.1) % 2 === 0;
-                        if (pl.spikeTimer > 0.5) { pl.spikeState = 2; pl.spikeTimer = 0; }
+                        pl.blinkOn = Math.floor(pl.spikeTimer / 0.12) % 2 === 0;
+                        if (pl.spikeTimer > 0.4) { pl.spikeState = 2; pl.spikeTimer = 0; }
                     } else if (pl.spikeState === 2) {
                         pl.animFrame = Math.floor(pl.spikeTimer / 0.15) % 2;
-                        if (pl.spikeTimer > 0.8) { pl.spikeState = 0; pl.spikeTimer = 0; }
+                        if (pl.spikeTimer > 0.6) { pl.spikeState = 0; pl.spikeTimer = 0; }
                     }
                 }
                 if (pl.falling) { pl.y += pl.vy; pl.vy += 0.3; }
@@ -1202,7 +1201,6 @@
                 const floatY = Math.sin(c.floatOffset) * 4;
                 if (!c.collected && p.x < c.x + c.w && p.x + p.w > c.x && p.y < c.y + c.h + floatY && p.y + p.h > c.y + floatY) {
                     c.collected = true;
-                    // MEJORA: Valor aleatorio entre 1 y 7, multiplicado por los bonus activos
                     const baseCoinValue = Math.floor(Math.random() * 7) + 1;
                     let bonus = this.x2Active ? 2 : 1;
                     if (this._vipX2) bonus *= 2;
@@ -1660,7 +1658,6 @@
             const vipActive = state.vipPass.active && state.vipPass.expiry > Date.now();
             const weeklyVIP = getWeeklyVIPList();
             
-            // MEJORA: Separar en desbloqueados y bloqueados para ordenar alfabéticamente por grupos
             const unlockedChars = [];
             const lockedChars = [];
 
@@ -1672,14 +1669,13 @@
                 }
             });
 
-            // Ordenar alfabéticamente ambos grupos
             unlockedChars.sort();
             lockedChars.sort();
 
-            // Combinar: primero los desbloqueados, luego los bloqueados
             const sortedCharacters = [...unlockedChars, ...lockedChars];
 
             sortedCharacters.forEach(key => {
+                const card = document.createElement('div');
                 const unlocked = isCharacterUnlocked(key), selected = state.selected === key;
                 const cls = CHARACTER_CLASSES[key] || 'common', level = getEffectiveLevel(key);
                 const isOwned = state.chars[key] || false, isWeeklyVIP = weeklyVIP.includes(key);
@@ -1691,23 +1687,23 @@
                 
                 const nameEl = document.createElement('div'); nameEl.className = 'name'; nameEl.textContent = key; card.appendChild(nameEl);
                 
-                const levelDiv = document.createElement('div'); levelDiv.className = 'char-level';
-                levelDiv.textContent = (vipActive && isWeeklyVIP) ? `Nv. 6 ⭐VIP` : `Nv. ${level}`;
-                card.appendChild(levelDiv);
-                
-                const skillVal = document.createElement('div'); skillVal.className = 'skill-value';
-                if (level > 0) {
-                    let val = '';
-                    if (cls === 'collector') val = `${[0,3,6,9,12,15][Math.min(level,5)]}s`;
-                    else if (cls === 'agile') val = `${[0,30,60,100,150,200][Math.min(level,5)]}m`;
-                    else if (cls === 'competitive') val = `${[0,2,5,8,12,15][Math.min(level,5)]}%`;
-                    else if (cls === 'tank' && level>=1) val = '1 absorción';
-                    else if (cls === 'vip' && level>=1) val = 'Imán+Revive';
-                    skillVal.textContent = val;
-                } else { skillVal.textContent = t('noSkill'); }
-                card.appendChild(skillVal);
-                
                 if (unlocked) {
+                    const levelDiv = document.createElement('div'); levelDiv.className = 'char-level';
+                    levelDiv.textContent = (vipActive && isWeeklyVIP) ? `Nv. 6 ⭐VIP` : `Nv. ${level}`;
+                    card.appendChild(levelDiv);
+                    
+                    const skillVal = document.createElement('div'); skillVal.className = 'skill-value';
+                    if (level > 0) {
+                        let val = '';
+                        if (cls === 'collector') val = `${[0,3,6,9,12,15][Math.min(level,5)]}s`;
+                        else if (cls === 'agile') val = `${[0,30,60,100,150,200][Math.min(level,5)]}m`;
+                        else if (cls === 'competitive') val = `${[0,2,5,8,12,15][Math.min(level,5)]}%`;
+                        else if (cls === 'tank' && level>=1) val = '1 absorción';
+                        else if (cls === 'vip' && level>=1) val = 'Imán+Revive';
+                        skillVal.textContent = val;
+                    } else { skillVal.textContent = t('noSkill'); }
+                    card.appendChild(skillVal);
+
                     if (isOwned) {
                         const currentLevel = state.levels[key] || 0, nextCost = getUpgradeCost(key, currentLevel);
                         if (nextCost && canUpgrade(key)) {
